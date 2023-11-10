@@ -35,6 +35,11 @@ jobs:
         name: msteams-presence-${{ matrix.platform }}-${{ matrix.arch }}
         # A file, directory or wildcard pattern that describes what to upload
         path: msteams-presence${{ matrix.platform == 'windows' && matrix.arch == 'amd64' && '.exe' || '' }}
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    -
+      name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
     - name: Create Docker Image
       uses: docker/build-push-action@v2
       if: matrix.platform == 'linux'
