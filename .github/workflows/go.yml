@@ -25,6 +25,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - id: lower-repo
+      run: |
+        echo "IMAGE=${GITHUB_REPOSITORY@L}" >> $GITHUB_OUTPUT
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
@@ -50,5 +54,5 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', github.repository) || format('ghcr.io/{0}:{1}-{2}', github.repository, matrix.platform, matrix.arch) }}
+        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', steps.lower-repo.outputs.IMAGE) || format('ghcr.io/{0}:{1}-{2}', steps.lower-repo.outputs.IMAGE, matrix.platform, matrix.arch) }}
       
