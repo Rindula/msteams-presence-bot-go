@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
 RUN mkdir /app
-ADD msteams-presence-amd64 /app/msteams-presence-amd64
+ADD msteams-presence /app/msteams-presence
 
 ENV CLIENT_ID= \
     TENANT_ID= \
@@ -11,5 +11,5 @@ ENV CLIENT_ID= \
     MQTT_PASSWORD=
 
 WORKDIR /app
-CMD ["/app/msteams-presence-amd64"]
-ENTRYPOINT ["/app/msteams-presence-amd64"]
+CMD ["/app/msteams-presence"]
+ENTRYPOINT ["/app/msteams-presence"]
