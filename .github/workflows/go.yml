@@ -3,6 +3,10 @@
 
 name: Go
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ "main" ]
@@ -46,5 +50,5 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && 'ghcr.io/${{ github.repository }}:latest' || 'ghcr.io/${{ github.repository }}:${{ matrix.platform }}-${{ matrix.arch }}' }}
+        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', github.repository) || format('ghcr.io/{0}:{1}-{2}', github.repository, matrix.platform, matrix.arch) }}
       
