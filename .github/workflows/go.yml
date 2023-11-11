@@ -66,4 +66,24 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', steps.lower-repo.outputs.image) || format('ghcr.io/{0}:{1}-{2}', steps.lower-repo.outputs.image, matrix.platform, matrix.arch) }}
-      
+  
+  release:
+    needs: build
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts/
+    - name: Create Release
+      id: create_release
+      uses: ncipollo/release-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        artifacts: artifacts/*
+        
