@@ -24,6 +24,24 @@ func goDotEnvVariable(key string) string {
 }
 
 func main() {
+	// create .env file, if not exists
+	if _, err := os.Stat(".env"); os.IsNotExist(err) {
+		file, err := os.Create(".env")
+		if err != nil {
+			fmt.Println("Error creating .env file")
+			os.Exit(1)
+		}
+		defer file.Close()
+		file.WriteString("CLIENT_ID=\n")
+		file.WriteString("TENANT_ID=\n")
+		file.WriteString("AUTH_TENANT=\n")
+		file.WriteString("GRAPH_USER_SCOPES='user.read offline_access'\n")
+		file.WriteString("MQTT_USER=\n")
+		file.WriteString("MQTT_PASSWORD=\n")
+		fmt.Println("Please fill in the .env file")
+		os.Exit(0)
+	}
+
 	// initialize mqtt client
 	opts := mqtt.NewClientOptions().AddBroker("tcp://rindula.de:1883")
 	opts.SetClientID("go-presence-bot")
