@@ -12,5 +12,5 @@ ENV CLIENT_ID= \
     MQTT_PASSWORD=
 
 WORKDIR /app
-CMD ["/app/msteams-presence"]
+
 ENTRYPOINT ["/app/msteams-presence"]
