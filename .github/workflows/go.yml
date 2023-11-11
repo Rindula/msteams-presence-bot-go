@@ -88,6 +88,6 @@ jobs:
       with:
         artifacts: artifacts/*
         generateReleaseNotes: true
-        tag: ${{ github.ref }}
-        name: Release ${{ github.ref }}
+        tag: ${{ hashFiles('artifacts/*') }}
+        name: Release ${{ hashFiles('artifacts/*') }}
         
