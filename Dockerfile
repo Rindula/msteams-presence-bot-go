@@ -4,10 +4,10 @@ RUN mkdir /app
 WORKDIR /app
 
 # Copy the binary file to the container
-COPY msteams-presence /app/msteams-presence
+COPY msteams-presence /usr/local/bin/msteams-presence
 
 # Set the file permissions
-RUN chmod +x /app/msteams-presence
+RUN chmod +x /usr/local/bin/msteams-presence
 
 # Set the environment variables
 ENV CLIENT_ID= \
@@ -20,4 +20,4 @@ ENV CLIENT_ID= \
 # create empty .env file
 RUN touch /app/.env
 
-ENTRYPOINT ["/app/msteams-presence"]
+ENTRYPOINT ["/usr/local/bin/msteams-presence"]
