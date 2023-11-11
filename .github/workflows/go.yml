@@ -92,6 +92,6 @@ jobs:
       with:
         artifacts: "**/*"
         generateReleaseNotes: true
-        tag: ${{ hashFiles('**/*') }}
+        tag: rel-${{ hashFiles('**/*') }}
         name: Release ${{ hashFiles('**/*') }}
         
