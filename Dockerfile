@@ -2,6 +2,7 @@ FROM ubuntu:latest
 
 RUN mkdir /app
 ADD msteams-presence /app/msteams-presence
+RUN chmod +x /app/msteams-presence
 
 ENV CLIENT_ID= \
     TENANT_ID= \
