@@ -7,6 +7,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha }}
   cancel-in-progress: false
 
+run-name: Build and Release
+
 on:
   push:
     branches: [ "main" ]
