@@ -80,6 +80,12 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         path: artifacts/
+    # move files from subfolder to root and rename based on their folder
+    - name: Move files
+      run: |
+        for f in artifacts/*; do
+          mv "$f" "${f/artifacts\//}"
+        done
     - name: Create Release
       id: create_release
       uses: ncipollo/release-action@v1
