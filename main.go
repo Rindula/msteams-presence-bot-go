@@ -38,8 +38,11 @@ func main() {
 		file.WriteString("GRAPH_USER_SCOPES='user.read offline_access'\n")
 		file.WriteString("MQTT_USER=\n")
 		file.WriteString("MQTT_PASSWORD=\n")
-		fmt.Println("Please fill in the .env file")
-		os.Exit(0)
+		// check if the environment variables are set and exit if not
+		if goDotEnvVariable("CLIENT_ID") == "" || goDotEnvVariable("TENANT_ID") == "" || goDotEnvVariable("AUTH_TENANT") == "" || goDotEnvVariable("GRAPH_USER_SCOPES") == "" || goDotEnvVariable("MQTT_USER") == "" || goDotEnvVariable("MQTT_PASSWORD") == "" {
+			fmt.Println("Please fill in the .env file")
+			os.Exit(1)
+		}
 	}
 
 	// initialize mqtt client
