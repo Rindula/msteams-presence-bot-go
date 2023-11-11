@@ -82,7 +82,7 @@ jobs:
         path: artifacts/
     - name: Move files
       run: |
-        for dir in artifacts/; do
+        for dir in artifacts/*; do
             for file in "$dir"*; do
                 base=$(basename "$dir")
                 mv -- "$file" "${base%}/"
