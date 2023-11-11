@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -32,16 +33,26 @@ func main() {
 			os.Exit(1)
 		}
 		defer file.Close()
-		file.WriteString("CLIENT_ID=\n")
-		file.WriteString("TENANT_ID=\n")
-		file.WriteString("AUTH_TENANT=\n")
-		file.WriteString("GRAPH_USER_SCOPES='user.read offline_access'\n")
-		file.WriteString("MQTT_USER=\n")
-		file.WriteString("MQTT_PASSWORD=\n")
 		// check if the environment variables are set and exit if not
 		if goDotEnvVariable("CLIENT_ID") == "" || goDotEnvVariable("TENANT_ID") == "" || goDotEnvVariable("AUTH_TENANT") == "" || goDotEnvVariable("GRAPH_USER_SCOPES") == "" || goDotEnvVariable("MQTT_USER") == "" || goDotEnvVariable("MQTT_PASSWORD") == "" {
+			file.WriteString("CLIENT_ID=\n")
+			file.WriteString("TENANT_ID=\n")
+			file.WriteString("AUTH_TENANT=\n")
+			file.WriteString("GRAPH_USER_SCOPES='user.read offline_access'\n")
+			file.WriteString("MQTT_USER=\n")
+			file.WriteString("MQTT_PASSWORD=\n")
 			fmt.Println("Please fill in the .env file")
 			os.Exit(1)
+		} else {
+			// fill in the .env file
+			envs := os.Environ()
+			envMap := make(map[string]string, len(envs))
+			for _, s := range envs {
+				pair := strings.SplitN(s, "=", 2)
+				envMap[pair[0]] = pair[1]
+			}
+			envString, _ := godotenv.Marshal(envMap)
+			file.WriteString(envString)
 		}
 	}
 
