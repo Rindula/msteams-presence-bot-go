@@ -92,8 +92,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        artifacts: artifacts/**/*
+        artifacts: "**/*"
         generateReleaseNotes: true
-        tag: ${{ hashFiles('artifacts/**/*') }}
-        name: Release ${{ hashFiles('artifacts/**/*') }}
+        tag: ${{ hashFiles('**/*') }}
+        name: Release ${{ hashFiles('**/*') }}
         
