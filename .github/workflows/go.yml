@@ -84,6 +84,11 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         path: artifacts/
+    - name: Bump version and push tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Create Release
       id: create_release
       uses: ncipollo/release-action@v1
@@ -92,6 +97,6 @@ jobs:
       with:
         artifacts: "**/*"
         generateReleaseNotes: true
-        tag: rel-${{ hashFiles('**/*') }}
-        name: Release ${{ hashFiles('**/*') }}
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: Release ${{ steps.tag_version.outputs.new_tag }}
         
