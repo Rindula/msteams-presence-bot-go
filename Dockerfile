@@ -11,6 +11,9 @@ ENV CLIENT_ID= \
     MQTT_USER= \
     MQTT_PASSWORD=
 
+# create empty .env file
+RUN touch /app/.env
+
 WORKDIR /app
 
 ENTRYPOINT ["/app/msteams-presence"]
