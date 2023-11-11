@@ -86,4 +86,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         artifacts: artifacts/*
+        generateReleaseNotes: true
+        tag: ${{ github.ref }}
         
