@@ -20,4 +20,13 @@ ENV CLIENT_ID= \
 # create empty .env file
 RUN touch /app/.env
 
+# Update the image
+RUN apt-get update && apt-get upgrade -y
+
+# Ensure root certificates are up to date
+RUN apt-get install -y ca-certificates
+
+# clear the apt cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
 ENTRYPOINT ["/usr/local/bin/msteams-presence"]
