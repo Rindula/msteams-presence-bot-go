@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM debian:latest
 
 RUN mkdir /app
 ADD msteams-presence /app/msteams-presence
