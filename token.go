@@ -135,14 +135,14 @@ func requestRefreshToken() string {
 	payload := strings.NewReader(fmt.Sprintf("client_id=%s&scope=%s", clientId, scope))
 	req, err := http.NewRequest("POST", url, payload)
 	if err != nil {
-		fmt.Println("Error requesting token on device code flow with url", url)
+		fmt.Println("Error requesting token on device code flow with url", url, err)
 		os.Exit(1)
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	deviceCodeResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("Error requesting token")
+		fmt.Println("Error requesting token", err)
 		os.Exit(1)
 	}
 	defer deviceCodeResponse.Body.Close()
