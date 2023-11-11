@@ -4,7 +4,7 @@ RUN mkdir /app
 WORKDIR /app
 
 # Copy the binary file to the container
-COPY msteams-presence /app/
+COPY msteams-presence /app/msteams-presence
 
 # Set the file permissions
 RUN chmod +x /app/msteams-presence
