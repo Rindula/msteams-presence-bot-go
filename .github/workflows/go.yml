@@ -4,7 +4,7 @@
 name: Go
 
 concurrency: 
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha }}
   cancel-in-progress: true
 
 on:
