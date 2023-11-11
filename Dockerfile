@@ -1,9 +1,15 @@
 FROM debian:latest
 
 RUN mkdir /app
-ADD msteams-presence /app/msteams-presence
+WORKDIR /app
+
+# Copy the binary file to the container
+COPY msteams-presence /app/
+
+# Set the file permissions
 RUN chmod +x /app/msteams-presence
 
+# Set the environment variables
 ENV CLIENT_ID= \
     TENANT_ID= \
     AUTH_TENANT=common \
@@ -13,7 +19,5 @@ ENV CLIENT_ID= \
 
 # create empty .env file
 RUN touch /app/.env
-
-WORKDIR /app
 
 ENTRYPOINT ["/app/msteams-presence"]
