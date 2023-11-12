@@ -29,7 +29,7 @@ func main() {
 	if _, err := os.Stat(".env"); os.IsNotExist(err) {
 		file, err := os.Create(".env")
 		if err != nil {
-			fmt.Println("Error creating .env file")
+			fmt.Println("Error creating .env file", err)
 			os.Exit(1)
 		}
 		defer file.Close()
@@ -93,13 +93,13 @@ func getPresence(token string) map[string]interface{} {
 	url := "https://graph.microsoft.com/v1.0/me/presence"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Println("Error requesting presence")
+		fmt.Println("Error requesting presence", err)
 		os.Exit(1)
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
 	data, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("Error requesting presence")
+		fmt.Println("Error requesting presence", err)
 		os.Exit(1)
 	}
 	defer data.Body.Close()
