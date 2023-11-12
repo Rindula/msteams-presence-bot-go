@@ -58,7 +58,7 @@ func main() {
 
 	// initialize mqtt client
 	opts := mqtt.NewClientOptions().AddBroker("tcp://rindula.de:1883")
-	opts.SetClientID("go-presence-bot")
+	opts.SetClientID(fmt.Sprintf("go-presence-bot-%v", time.Now().UnixNano()))
 	opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
 		fmt.Printf("TOPIC: %s\n", msg.Topic())
 		fmt.Printf("MSG: %s\n", msg.Payload())
@@ -70,15 +70,15 @@ func main() {
 	opts.SetUsername(goDotEnvVariable("MQTT_USER"))
 	opts.SetPassword(goDotEnvVariable("MQTT_PASSWORD"))
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
-		fmt.Println("Connected")
+		fmt.Println("Connected as", opts.ClientID)
 		sensor_availability := "{\"name\": \"Teams Availability\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"DIY\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.0\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_availablility\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.availablility }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
 		sensor_activity := "{\"name\": \"Teams Activity\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"DIY\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.0\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_activity\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.activity }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
 		client.Publish("homeassistant/sensor/teams/availability/config", 0, false, sensor_availability)
 		client.Publish("homeassistant/sensor/teams/activity/config", 0, false, sensor_activity)
 	})
 	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+	if mqttToken := client.Connect(); mqttToken.Wait() && mqttToken.Error() != nil {
+		panic(mqttToken.Error())
 	}
 	for {
 		presence := getPresence(getToken())
