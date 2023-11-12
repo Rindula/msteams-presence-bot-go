@@ -94,9 +94,9 @@ func requestToken() Token {
 	}
 	// request microsoft graph token
 	fmt.Println("Requesting usable token...")
-	clientId := goDotEnvVariable("CLIENT_ID")
-	scope := goDotEnvVariable("GRAPH_USER_SCOPES")
-	tenantId := goDotEnvVariable("AUTH_TENANT")
+	clientId := os.Getenv("CLIENT_ID")
+	scope := os.Getenv("GRAPH_USER_SCOPES")
+	tenantId := os.Getenv("AUTH_TENANT")
 	urlString := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", tenantId)
 	payloadData := url.Values{}
 	payloadData.Set("grant_type", "refresh_token")
@@ -141,9 +141,9 @@ func requestToken() Token {
 func requestRefreshToken() string {
 	// request microsoft graph token
 	fmt.Println("Requesting refresh token...")
-	clientId := goDotEnvVariable("CLIENT_ID")
-	scope := goDotEnvVariable("GRAPH_USER_SCOPES")
-	tenantId := goDotEnvVariable("AUTH_TENANT")
+	clientId := os.Getenv("CLIENT_ID")
+	scope := os.Getenv("GRAPH_USER_SCOPES")
+	tenantId := os.Getenv("AUTH_TENANT")
 	url := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/devicecode", tenantId)
 	payload := strings.NewReader(fmt.Sprintf("client_id=%s&scope=%s", clientId, scope))
 	req, err := http.NewRequest("POST", url, payload)
@@ -186,9 +186,9 @@ func requestRefreshToken() string {
 
 func checkToken(deviceCode string) string {
 	// check if token is valid
-	clientId := goDotEnvVariable("CLIENT_ID")
-	scope := goDotEnvVariable("GRAPH_USER_SCOPES")
-	tenantId := goDotEnvVariable("AUTH_TENANT")
+	clientId := os.Getenv("CLIENT_ID")
+	scope := os.Getenv("GRAPH_USER_SCOPES")
+	tenantId := os.Getenv("AUTH_TENANT")
 	url := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", tenantId)
 	payload := strings.NewReader(fmt.Sprintf("grant_type=urn:ietf:params:oauth:grant-type:device_code&client_id=%s&scope=%s&device_code=%s", clientId, scope, deviceCode))
 	req, err := http.NewRequest("POST", url, payload)
