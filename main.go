@@ -5,24 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
 )
-
-func goDotEnvVariable(key string) string {
-
-	// load .env file
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		fmt.Println("Error loading .env file")
-	}
-
-	return os.Getenv(key)
-}
 
 func main() {
 	// create .env file, if not exists
@@ -34,13 +23,15 @@ func main() {
 		}
 		defer file.Close()
 		// check if the environment variables are set and exit if not
-		if goDotEnvVariable("CLIENT_ID") == "" || goDotEnvVariable("TENANT_ID") == "" || goDotEnvVariable("AUTH_TENANT") == "" || goDotEnvVariable("GRAPH_USER_SCOPES") == "" || goDotEnvVariable("MQTT_USER") == "" || goDotEnvVariable("MQTT_PASSWORD") == "" {
+		if os.Getenv("CLIENT_ID") == "" || os.Getenv("TENANT_ID") == "" || os.Getenv("AUTH_TENANT") == "" || os.Getenv("GRAPH_USER_SCOPES") == "" || os.Getenv("MQTT_USER") == "" || os.Getenv("MQTT_PASSWORD") == "" {
 			file.WriteString("CLIENT_ID=\n")
 			file.WriteString("TENANT_ID=\n")
 			file.WriteString("AUTH_TENANT=\n")
 			file.WriteString("GRAPH_USER_SCOPES='user.read offline_access'\n")
 			file.WriteString("MQTT_USER=\n")
 			file.WriteString("MQTT_PASSWORD=\n")
+			file.WriteString("MQTT_HOST=\n")
+			file.WriteString("MQTT_PORT=1883\n")
 			fmt.Println("Please fill in the .env file")
 			os.Exit(1)
 		} else {
@@ -56,8 +47,16 @@ func main() {
 		}
 	}
 
+	// load .env file
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		fmt.Println("Error loading .env file")
+	}
+
 	// initialize mqtt client
-	opts := mqtt.NewClientOptions().AddBroker("tcp://rindula.de:1883")
+	port, _ := strconv.Atoi(os.Getenv("MQTT_PORT"))
+	opts := mqtt.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%d", os.Getenv("MQTT_HOST"), port))
 	opts.SetClientID(fmt.Sprintf("go-presence-bot-%v", time.Now().UnixNano()))
 	opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
 		fmt.Printf("TOPIC: %s\n", msg.Topic())
@@ -67,8 +66,8 @@ func main() {
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetAutoReconnect(true)
 	opts.SetMaxReconnectInterval(1 * time.Second)
-	opts.SetUsername(goDotEnvVariable("MQTT_USER"))
-	opts.SetPassword(goDotEnvVariable("MQTT_PASSWORD"))
+	opts.SetUsername(os.Getenv("MQTT_USER"))
+	opts.SetPassword(os.Getenv("MQTT_PASSWORD"))
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
 		fmt.Println("Connected as", opts.ClientID)
 		sensor_availability := "{\"name\": \"Teams Availability\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"DIY\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.0\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_availablility\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.availablility }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
