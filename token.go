@@ -22,7 +22,7 @@ func saveToken(token string, validUntil int64, refreshToken string) bool {
 	fmt.Println("Saving token to file...")
 	file, errCreateFile := os.Create(tokenFile)
 	if errCreateFile != nil {
-		fmt.Println("Error saving token")
+		fmt.Println("Error saving token", errCreateFile)
 		return false
 	}
 	defer file.Close()
@@ -31,7 +31,7 @@ func saveToken(token string, validUntil int64, refreshToken string) bool {
 	encoded := base64.StdEncoding.EncodeToString(jsonstring)
 	_, errWrite := writer.WriteString(encoded)
 	if errWrite != nil {
-		fmt.Println("Error saving token")
+		fmt.Println("Error saving token", errWrite)
 		return false
 	}
 
@@ -94,7 +94,7 @@ func requestToken() string {
 	payload := strings.NewReader(payloadData.Encode())
 	req, err := http.NewRequest("POST", urlString, payload)
 	if err != nil {
-		fmt.Println("Error requesting token")
+		fmt.Println("Error requesting token", err)
 		os.Exit(1)
 	}
 
@@ -180,13 +180,13 @@ func checkToken(deviceCode string) string {
 	payload := strings.NewReader(fmt.Sprintf("grant_type=urn:ietf:params:oauth:grant-type:device_code&client_id=%s&scope=%s&device_code=%s", clientId, scope, deviceCode))
 	req, err := http.NewRequest("POST", url, payload)
 	if err != nil {
-		fmt.Println("Error requesting token")
+		fmt.Println("Error requesting token", err)
 		os.Exit(1)
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	tokenResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("Error requesting token")
+		fmt.Println("Error requesting token", err)
 		os.Exit(1)
 	}
 	defer tokenResponse.Body.Close()
