@@ -88,7 +88,7 @@ func main() {
 	}
 }
 
-func getPresence(token string) map[string]interface{} {
+func getPresence(token Token) map[string]interface{} {
 	// get presence from microsoft graph api
 	url := "https://graph.microsoft.com/v1.0/me/presence"
 	req, err := http.NewRequest("GET", url, nil)
@@ -96,7 +96,7 @@ func getPresence(token string) map[string]interface{} {
 		fmt.Println("Error requesting presence", err)
 		os.Exit(1)
 	}
-	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Authorization", "Bearer "+token.Token)
 	data, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error requesting presence", err)

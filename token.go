@@ -2,13 +2,14 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/base64"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -16,7 +17,13 @@ import (
 var tokenFile string = "token.data"
 var refreshToken string
 
-func saveToken(token string, validUntil int64, refreshToken string) bool {
+type Token struct {
+	Token        string
+	ValidUntil   int64
+	RefreshToken string
+}
+
+func saveToken(token Token) bool {
 	// Save token to file
 	// try saving token to file
 	fmt.Println("Saving token to file...")
@@ -26,10 +33,17 @@ func saveToken(token string, validUntil int64, refreshToken string) bool {
 		return false
 	}
 	defer file.Close()
+
+	b := bytes.Buffer{}
+	e := gob.NewEncoder(&b)
+	errEncode := e.Encode(token)
+	if errEncode != nil {
+		fmt.Println("Error saving token", errEncode)
+		return false
+	}
+
 	writer := bufio.NewWriter(file)
-	jsonstring, _ := json.Marshal(map[string]string{"token": token, "validUntil": strconv.FormatInt(validUntil, 10), "refreshToken": refreshToken})
-	encoded := base64.StdEncoding.EncodeToString(jsonstring)
-	_, errWrite := writer.WriteString(encoded)
+	_, errWrite := writer.WriteString(base64.StdEncoding.EncodeToString(b.Bytes()))
 	if errWrite != nil {
 		fmt.Println("Error saving token", errWrite)
 		return false
@@ -38,7 +52,7 @@ func saveToken(token string, validUntil int64, refreshToken string) bool {
 	return true
 }
 
-func getToken() string {
+func getToken() Token {
 	// Get token from file
 	fileContent, err := os.ReadFile(tokenFile)
 	if err != nil {
@@ -46,37 +60,35 @@ func getToken() string {
 		requestToken()
 		return getToken()
 	}
-	var tokenMap map[string]string
-	decoded, _ := base64.StdEncoding.DecodeString(string(fileContent))
-	json.Unmarshal(decoded, &tokenMap)
-	val, ok := tokenMap["token"]
-	if ok {
 
-		// Check if token is valid and not expired
-		validUntil, errValidUntil := strconv.ParseInt(tokenMap["validUntil"], 10, 64)
-		var okRefreshToken bool
-		refreshToken, okRefreshToken = tokenMap["refreshToken"]
-
-		if errValidUntil != nil {
-			fmt.Println("Error reading token file")
-			return ""
-		}
-		if validUntil < time.Now().Unix() {
-			// token is expired
-			if !okRefreshToken {
-				fmt.Println("Error reading token file")
-				return ""
-			}
-			// request new token
-			return requestToken()
-		}
-
-		return val
+	var token Token
+	decoded, errDecode := base64.StdEncoding.DecodeString(string(fileContent))
+	if errDecode != nil {
+		fmt.Println("Error reading token file:", errDecode)
+		requestToken()
+		return getToken()
 	}
-	return ""
+	b := bytes.Buffer{}
+	b.Write(decoded)
+	d := gob.NewDecoder(&b)
+	errDecode = d.Decode(&token)
+	if errDecode != nil {
+		fmt.Println("Error reading token file:", errDecode)
+		requestToken()
+		return getToken()
+	}
+
+	// Check if token is valid and not expired
+	if token.ValidUntil < time.Now().Unix() {
+		// request new token
+		return requestToken()
+	}
+
+	return token
+
 }
 
-func requestToken() string {
+func requestToken() Token {
 	if refreshToken == "" {
 		requestRefreshToken()
 	}
@@ -95,14 +107,14 @@ func requestToken() string {
 	req, err := http.NewRequest("POST", urlString, payload)
 	if err != nil {
 		fmt.Println("Error requesting token", err)
-		os.Exit(1)
+		return Token{}
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	tokenResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error requesting token:", err)
-		os.Exit(1)
+		return Token{}
 	}
 	defer tokenResponse.Body.Close()
 
@@ -110,17 +122,18 @@ func requestToken() string {
 		var body map[string]interface{}
 		json.NewDecoder(tokenResponse.Body).Decode(&body)
 		fmt.Println("Error requesting token:", tokenResponse.Status, body)
-		return ""
+		return Token{}
 	}
 
 	var tokenMap map[string]interface{}
 	json.NewDecoder(tokenResponse.Body).Decode(&tokenMap)
-	refreshToken = tokenMap["refresh_token"].(string)
-	token := tokenMap["access_token"].(string)
-	validUntil := time.Now().Unix() + int64(tokenMap["expires_in"].(float64))
-	if !saveToken(token, validUntil, refreshToken) {
+	var token Token
+	token.RefreshToken = tokenMap["refresh_token"].(string)
+	token.Token = tokenMap["access_token"].(string)
+	token.ValidUntil = time.Now().Unix() + int64(tokenMap["expires_in"].(float64))
+	if !saveToken(token) {
 		fmt.Println("Error saving token")
-		return ""
+		return Token{}
 	}
 	return token
 }
