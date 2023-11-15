@@ -15,7 +15,6 @@ import (
 )
 
 var tokenFile string = "token.data"
-var refreshToken string
 
 type Token struct {
 	Token        string
@@ -53,19 +52,20 @@ func saveToken(token Token) bool {
 }
 
 func getToken() Token {
+	var token Token
+
 	// Get token from file
 	fileContent, err := os.ReadFile(tokenFile)
 	if err != nil {
 		fmt.Println("Error reading token file:", err)
-		requestToken()
+		requestToken(&Token{})
 		return getToken()
 	}
 
-	var token Token
 	decoded, errDecode := base64.StdEncoding.DecodeString(string(fileContent))
 	if errDecode != nil {
 		fmt.Println("Error reading token file:", errDecode)
-		requestToken()
+		requestToken(&Token{})
 		return getToken()
 	}
 	b := bytes.Buffer{}
@@ -74,23 +74,23 @@ func getToken() Token {
 	errDecode = d.Decode(&token)
 	if errDecode != nil {
 		fmt.Println("Error reading token file:", errDecode)
-		requestToken()
+		requestToken(&Token{})
 		return getToken()
 	}
 
 	// Check if token is valid and not expired
 	if token.ValidUntil < time.Now().Unix() {
 		// request new token
-		return requestToken()
+		return requestToken(&token)
 	}
 
 	return token
 
 }
 
-func requestToken() Token {
-	if refreshToken == "" {
-		requestRefreshToken()
+func requestToken(oldToken *Token) Token {
+	if oldToken.RefreshToken == "" {
+		requestRefreshToken(oldToken)
 	}
 	// request microsoft graph token
 	fmt.Println("Requesting usable token...")
@@ -102,7 +102,7 @@ func requestToken() Token {
 	payloadData.Set("grant_type", "refresh_token")
 	payloadData.Set("client_id", clientId)
 	payloadData.Set("scope", scope)
-	payloadData.Set("refresh_token", refreshToken)
+	payloadData.Set("refresh_token", oldToken.RefreshToken)
 	payload := strings.NewReader(payloadData.Encode())
 	req, err := http.NewRequest("POST", urlString, payload)
 	if err != nil {
@@ -138,7 +138,7 @@ func requestToken() Token {
 	return token
 }
 
-func requestRefreshToken() string {
+func requestRefreshToken(oldToken *Token) string {
 	// request microsoft graph token
 	fmt.Println("Requesting refresh token...")
 	clientId := os.Getenv("CLIENT_ID")
@@ -171,7 +171,7 @@ func requestRefreshToken() string {
 		token := checkToken(deviceCodeMap["device_code"].(string))
 		fmt.Printf("Waiting for %d more seconds\r", worksUntil-time.Now().Unix())
 		if token != "" {
-			refreshToken = token
+			oldToken.RefreshToken = token
 			fmt.Println("Token received                     ")
 			return token
 		}
