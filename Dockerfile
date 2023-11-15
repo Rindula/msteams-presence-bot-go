@@ -11,7 +11,6 @@ RUN chmod +x /usr/local/bin/msteams-presence
 
 # Set the environment variables
 ENV CLIENT_ID= \
-    TENANT_ID= \
     AUTH_TENANT=common \
     GRAPH_USER_SCOPES='user.read offline_access' \
     MQTT_USER= \

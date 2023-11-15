@@ -23,9 +23,8 @@ func main() {
 		}
 		defer file.Close()
 		// check if the environment variables are set and exit if not
-		if os.Getenv("CLIENT_ID") == "" || os.Getenv("TENANT_ID") == "" || os.Getenv("AUTH_TENANT") == "" || os.Getenv("GRAPH_USER_SCOPES") == "" || os.Getenv("MQTT_USER") == "" || os.Getenv("MQTT_PASSWORD") == "" {
+		if os.Getenv("CLIENT_ID") == "" || os.Getenv("AUTH_TENANT") == "" || os.Getenv("GRAPH_USER_SCOPES") == "" || os.Getenv("MQTT_USER") == "" || os.Getenv("MQTT_PASSWORD") == "" {
 			file.WriteString("CLIENT_ID=\n")
-			file.WriteString("TENANT_ID=\n")
 			file.WriteString("AUTH_TENANT=\n")
 			file.WriteString("GRAPH_USER_SCOPES='user.read offline_access'\n")
 			file.WriteString("MQTT_USER=\n")
