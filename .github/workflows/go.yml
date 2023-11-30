@@ -18,7 +18,7 @@ on:
 jobs:
 
   build:
-    runs-on: self-hosted
+    runs-on: msteams-presence-bot-go
     permissions:
       contents: read
       packages: write
@@ -75,7 +75,7 @@ jobs:
   
   release:
     needs: build
-    runs-on: self-hosted
+    runs-on: msteams-presence-bot-go
     permissions:
       contents: write
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
