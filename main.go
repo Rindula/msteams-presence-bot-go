@@ -64,7 +64,7 @@ func main() {
 	opts.SetPingTimeout(1 * time.Second)
 	opts.SetKeepAlive(2 * time.Second)
 	opts.SetAutoReconnect(true)
-	opts.SetMaxReconnectInterval(1 * time.Second)
+	opts.SetMaxReconnectInterval(15 * time.Second)
 	opts.SetUsername(os.Getenv("MQTT_USER"))
 	opts.SetPassword(os.Getenv("MQTT_PASSWORD"))
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
