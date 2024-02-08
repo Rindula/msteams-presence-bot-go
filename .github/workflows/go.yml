@@ -24,7 +24,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        go: [ '1.21.4' ]
+        go: [ '1.21.7' ]
         platform: [ 'linux', 'windows' ]
         arch: [ 'amd64', 'arm64' ]
     steps:
