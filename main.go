@@ -78,11 +78,11 @@ func main() {
 	if mqttToken := client.Connect(); mqttToken.Wait() && mqttToken.Error() != nil {
 		panic(mqttToken.Error())
 	}
-	for {
+	ticker := time.NewTicker(1 * time.Second)
+	for range ticker.C {
 		presence := getPresence(getToken())
 		presenceJson, _ := json.Marshal(presence)
 		client.Publish("msteams/presence", 0, false, string(presenceJson))
-		time.Sleep(1 * time.Second)
 	}
 }
 
