@@ -80,6 +80,10 @@ func main() {
 	}
 	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
+		// check if client is still connected, else panic
+		if !client.IsConnected() {
+			panic("MQTT client is not connected")
+		}
 		presence := getPresence(getToken())
 		presenceJson, _ := json.Marshal(presence)
 		client.Publish("msteams/presence", 0, false, string(presenceJson))
