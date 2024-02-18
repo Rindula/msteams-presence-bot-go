@@ -97,19 +97,19 @@ func getPresence(token Token) map[string]interface{} {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println("Error requesting presence", err)
-		os.Exit(1)
+		return map[string]interface{}{"availablility": "unknown", "activity": "unknown"}
 	}
 	req.Header.Add("Authorization", "Bearer "+token.Token)
 	data, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error requesting presence", err)
-		os.Exit(1)
+		return map[string]interface{}{"availablility": "unknown", "activity": "unknown"}
 	}
 	defer data.Body.Close()
 
 	if data.StatusCode != 200 {
 		fmt.Println("Error requesting presence", data.StatusCode)
-		os.Exit(1)
+		return map[string]interface{}{"availablility": "unknown", "activity": "unknown"}
 	}
 
 	var presenceMap map[string]interface{}
