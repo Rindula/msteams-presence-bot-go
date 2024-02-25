@@ -69,7 +69,7 @@ func main() {
 	opts.SetPassword(os.Getenv("MQTT_PASSWORD"))
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
 		fmt.Println("Connected as", opts.ClientID)
-		sensor_availability := "{\"name\": \"Teams Availability\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"DIY\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.0\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_availablility\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.availablility }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
+		sensor_availability := "{\"name\": \"Teams Availability\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"DIY\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.0\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_availability\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.availability }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
 		sensor_activity := "{\"name\": \"Teams Activity\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"DIY\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.0\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_activity\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.activity }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
 		client.Publish("homeassistant/sensor/teams/availability/config", 0, false, sensor_availability)
 		client.Publish("homeassistant/sensor/teams/activity/config", 0, false, sensor_activity)
@@ -97,23 +97,23 @@ func getPresence(token Token) map[string]interface{} {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println("Error requesting presence", err)
-		return map[string]interface{}{"availablility": "unknown", "activity": "unknown"}
+		return map[string]interface{}{"availability": "unknown", "activity": "unknown"}
 	}
 	req.Header.Add("Authorization", "Bearer "+token.Token)
 	data, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error requesting presence", err)
-		return map[string]interface{}{"availablility": "unknown", "activity": "unknown"}
+		return map[string]interface{}{"availability": "unknown", "activity": "unknown"}
 	}
 	defer data.Body.Close()
 
 	if data.StatusCode != 200 {
 		fmt.Println("Error requesting presence", data.StatusCode)
-		return map[string]interface{}{"availablility": "unknown", "activity": "unknown"}
+		return map[string]interface{}{"availability": "unknown", "activity": "unknown"}
 	}
 
 	var presenceMap map[string]interface{}
 	json.NewDecoder(data.Body).Decode(&presenceMap)
 
-	return map[string]interface{}{"availablility": presenceMap["availability"].(string), "activity": presenceMap["activity"].(string)}
+	return map[string]interface{}{"availability": presenceMap["availability"].(string), "activity": presenceMap["activity"].(string)}
 }
