@@ -18,6 +18,7 @@ on:
 jobs:
 
   build:
+    needs: release
     runs-on: msteams-presence-bot-go
     permissions:
       contents: read
@@ -71,14 +72,15 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', steps.lower-repo.outputs.image) || format('ghcr.io/{0}:{1}-{2}', steps.lower-repo.outputs.image, matrix.platform, matrix.arch) }}
+        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', steps.lower-repo.outputs.image) || format('ghcr.io/{0}:{1}-{2}', steps.lower-repo.outputs.image, matrix.platform, matrix.arch) }},${{ needs.release.outputs.tag }}
   
   release:
-    needs: build
     runs-on: msteams-presence-bot-go
     permissions:
       contents: write
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs:
+      tag: ${{ steps.tag_version.outputs.new_tag }}
     steps:
     - name: Download a Build Artifact
       uses: actions/download-artifact@v4
