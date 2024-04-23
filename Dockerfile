@@ -1,10 +1,9 @@
-FROM debian:latest
+FROM golang:latest
 
 RUN mkdir /app
 WORKDIR /app
 
-# Copy the binary file to the container
-COPY msteams-presence /usr/local/bin/msteams-presence
+RUN CGO_ENABLED=0 go build -o /usr/local/bin/msteams-presence
 
 # Set the file permissions
 RUN chmod +x /usr/local/bin/msteams-presence

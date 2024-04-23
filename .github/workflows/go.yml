@@ -23,11 +23,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    strategy:
-      matrix:
-        go: [ '1.21.7' ]
-        platform: [ 'linux', 'windows' ]
-        arch: [ 'amd64', 'arm64' ]
     steps:
     - uses: actions/checkout@v4
 
@@ -35,44 +30,28 @@ jobs:
       run: |
         echo "image=${GITHUB_REPOSITORY}" | awk '{print tolower($0)}' >> $GITHUB_OUTPUT
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go }}
-
-    - name: Build
-      run:  CGO_ENABLED=0 GOOS=${{ matrix.platform }} GOARCH=${{ matrix.arch }} go build -o msteams-presence-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'windows' && matrix.arch == 'amd64' && '.exe' || '' }}
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v4.3.2
-      with:
-        # Artifact name
-        name: msteams-presence-${{ matrix.platform }}-${{ matrix.arch }}
-        path: msteams-presence-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'windows' && matrix.arch == 'amd64' && '.exe' || '' }}
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
-      if: matrix.platform == 'linux' && github.event_name == 'push'
+      if: github.event_name == 'push'
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      if: matrix.platform == 'linux' && github.event_name == 'push'
+      if: github.event_name == 'push'
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
-      if: matrix.platform == 'linux' && github.event_name == 'push'
+      if: github.event_name == 'push'
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Rename Artifact
-      if: matrix.platform == 'linux' && github.event_name == 'push'
-      run: |
-        mv msteams-presence-${{ matrix.platform }}-${{ matrix.arch }} msteams-presence
     - name: Create Docker Image
       uses: docker/build-push-action@v5
-      if: matrix.platform == 'linux' && github.event_name == 'push'
+      if: github.event_name == 'push'
       with:
         context: .
         file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', steps.lower-repo.outputs.image) || format('ghcr.io/{0}:{1}-{2}', steps.lower-repo.outputs.image, matrix.platform, matrix.arch) }},ghcr.io/${{ steps.lower-repo.outputs.image }}:${{ needs.release.outputs.tag }}
+        tags: ghcr.io/${{ steps.lower-repo.outputs.image }}:${{ needs.release.outputs.tag }}
   
   release:
     runs-on: msteams-presence-bot-go
@@ -82,10 +61,6 @@ jobs:
     outputs:
       tag: ${{ steps.tag_version.outputs.new_tag }}
     steps:
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts/
     - name: Bump version and push tag
       id: tag_version
       uses: mathieudutour/github-tag-action@v6.2
