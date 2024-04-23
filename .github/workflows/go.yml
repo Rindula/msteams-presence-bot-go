@@ -72,7 +72,7 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', steps.lower-repo.outputs.image) || format('ghcr.io/{0}:{1}-{2}', steps.lower-repo.outputs.image, matrix.platform, matrix.arch) }},ghcr.io/${{ steps.lower-repo.outputs.image }}${{ needs.release.outputs.tag }}
+        tags: ${{ matrix.platform == 'linux' && matrix.arch == 'amd64' && format('ghcr.io/{0}:latest', steps.lower-repo.outputs.image) || format('ghcr.io/{0}:{1}-{2}', steps.lower-repo.outputs.image, matrix.platform, matrix.arch) }},ghcr.io/${{ steps.lower-repo.outputs.image }}:${{ needs.release.outputs.tag }}
   
   release:
     runs-on: msteams-presence-bot-go
