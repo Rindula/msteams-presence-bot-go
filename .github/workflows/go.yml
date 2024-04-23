@@ -48,6 +48,14 @@ jobs:
         # Artifact name
         name: msteams-presence-${{ matrix.platform }}-${{ matrix.arch }}
         path: msteams-presence-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'windows' && matrix.arch == 'amd64' && '.exe' || '' }}
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: msteams-presence-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.platform == 'windows' && matrix.arch == 'amd64' && '.exe' || '' }}
+        asset_name: msteams-presence-${{ matrix.platform }}-${{ matrix.arch }}
+        tag: ${{ needs.release.outputs.tag }}
+        overwrite: true
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
       if: matrix.platform == 'linux' && github.event_name == 'push'
@@ -82,10 +90,6 @@ jobs:
     outputs:
       tag: ${{ steps.tag_version.outputs.new_tag }}
     steps:
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts/
     - name: Bump version and push tag
       id: tag_version
       uses: mathieudutour/github-tag-action@v6.2
