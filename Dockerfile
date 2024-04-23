@@ -1,7 +1,6 @@
 FROM golang:latest as builder
 
-COPY go.* /build/.
-COPY *.go /build/.
+COPY . .
 
 ENV CGO_ENABLED=0
 RUN go build -o /usr/local/bin/msteams-presence
