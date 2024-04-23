@@ -3,7 +3,8 @@ FROM golang:latest
 RUN mkdir /app
 WORKDIR /app
 
-RUN CGO_ENABLED=0 go build -o /usr/local/bin/msteams-presence
+ENV CGO_ENABLED=0
+RUN go build -o /usr/local/bin/msteams-presence
 
 # Set the file permissions
 RUN chmod +x /usr/local/bin/msteams-presence
