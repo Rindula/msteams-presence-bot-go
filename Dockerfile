@@ -1,13 +1,18 @@
-FROM golang:latest
+FROM golang:latest as builder
 
-RUN mkdir /app
-WORKDIR /app
+COPY go.* /build/.
+COPY *.go /build/.
 
 ENV CGO_ENABLED=0
 RUN go build -o /usr/local/bin/msteams-presence
 
 # Set the file permissions
 RUN chmod +x /usr/local/bin/msteams-presence
+
+FROM debian:latest
+
+RUN mkdir /app
+WORKDIR /app
 
 # Set the environment variables
 ENV CLIENT_ID= \
@@ -27,5 +32,7 @@ RUN apt-get install -y ca-certificates
 
 # clear the apt cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/local/bin/msteams-presence /usr/local/bin/msteams-presence
 
 ENTRYPOINT ["/usr/local/bin/msteams-presence"]
