@@ -19,7 +19,7 @@ jobs:
 
   build:
     needs: release
-    runs-on: msteams-presence-bot-go
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' || success()
     permissions:
       contents: read
@@ -57,7 +57,7 @@ jobs:
         tags: ghcr.io/${{ steps.lower-repo.outputs.image }}:$TAG
   
   release:
-    runs-on: msteams-presence-bot-go
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
