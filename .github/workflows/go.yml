@@ -20,7 +20,7 @@ jobs:
   build:
     needs: release
     runs-on: msteams-presence-bot-go
-    if: success() || github.event_name == "pull_request"
+    if: github.event_name == 'pull_request' || success()
     permissions:
       contents: read
       packages: write
