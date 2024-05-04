@@ -20,6 +20,7 @@ jobs:
   build:
     needs: release
     runs-on: msteams-presence-bot-go
+    if: success() || github.event_name == "pull_request"
     permissions:
       contents: read
       packages: write
@@ -45,14 +46,15 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Create Docker Image
       uses: docker/build-push-action@v5
-      if: github.event_name == 'push'
+      env:
+        tag: ${{ github.event_name == 'push' && needs.release.outputs.tag || 'build' }}
       with:
         context: .
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
         provenance: false
-        push: true
-        tags: ghcr.io/${{ steps.lower-repo.outputs.image }}:${{ needs.release.outputs.tag }}
+        push: github.event_name == 'push'
+        tags: ghcr.io/${{ steps.lower-repo.outputs.image }}:$TAG
   
   release:
     runs-on: msteams-presence-bot-go
