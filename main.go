@@ -69,10 +69,10 @@ func main() {
 	opts.SetPassword(os.Getenv("MQTT_PASSWORD"))
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
 		fmt.Println("Connected as", opts.ClientID)
-		sensor_availability := "{\"name\": \"Teams Availability\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"DIY\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.0\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_availability\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.availability }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
-		sensor_activity := "{\"name\": \"Teams Activity\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"DIY\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.0\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_activity\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.activity }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
-		client.Publish("homeassistant/sensor/teams/availability/config", 0, false, sensor_availability)
-		client.Publish("homeassistant/sensor/teams/activity/config", 0, false, sensor_activity)
+		sensor_availability := "{\"name\": \"Teams Availability\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"Rindula\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.1\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_availability\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.availability }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
+		sensor_activity := "{\"name\": \"Teams Activity\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"Rindula\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.1\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_activity\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.activity }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
+		client.Publish("homeassistant/sensor/teams/availability/config", 1, false, sensor_availability)
+		client.Publish("homeassistant/sensor/teams/activity/config", 1, false, sensor_activity)
 	})
 	client := mqtt.NewClient(opts)
 	if mqttToken := client.Connect(); mqttToken.Wait() && mqttToken.Error() != nil {
