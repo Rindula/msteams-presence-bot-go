@@ -116,5 +116,5 @@ func getPresence(token Token) map[string]interface{} {
 	var presenceMap map[string]interface{}
 	json.NewDecoder(data.Body).Decode(&presenceMap)
 
-	return map[string]interface{}{"availability": presenceMap["availability"].(string), "activity": presenceMap["activity"].(string)}
+	return presenceMap
 }
