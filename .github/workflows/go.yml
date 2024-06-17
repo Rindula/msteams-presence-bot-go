@@ -43,7 +43,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Create Docker Image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       env:
         TAG: ${{ github.event_name == 'push' && needs.release.outputs.tag || 'build' }}
       with:
