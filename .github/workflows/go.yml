@@ -11,7 +11,6 @@ run-name: Build and Release
 
 on:
   push:
-    branches: [ "main" ]
     tags:
       - "v*.*.*"
   pull_request:
@@ -24,9 +23,7 @@ env:
 jobs:
 
   build:
-    needs: release
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || success() || startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: read
       packages: write
@@ -72,33 +69,3 @@ jobs:
         push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-  
-  release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    outputs:
-      tag: ${{ steps.tag_version.outputs.new_tag }}
-    steps:
-    - uses: actions/create-github-app-token@v1
-      id: app-token
-      with:
-        app-id: ${{ vars.APP_ID }}
-        private-key: ${{ secrets.PRIVATE_ACTION_KEY }}
-    - name: Bump version and push tag
-      id: tag_version
-      uses: mathieudutour/github-tag-action@v6.2
-      with:
-        github_token: ${{ steps.app-token.outputs.token }}
-    - name: Create Release
-      id: create_release
-      uses: ncipollo/release-action@v1
-      env:
-        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-      with:
-        artifacts: "**/*"
-        generateReleaseNotes: true
-        tag: ${{ steps.tag_version.outputs.new_tag }}
-        name: Release ${{ steps.tag_version.outputs.new_tag }}
-        
