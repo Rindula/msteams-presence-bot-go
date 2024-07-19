@@ -13,6 +13,35 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type Device struct {
+	Manufacturer string `json:"manufacturer"`
+	Model        string `json:"model"`
+	Name         string `json:"name"`
+	SwVersion    string `json:"sw_version"`
+	Identifiers  string `json:"identifiers"`
+}
+
+type HomeassistantDevice struct {
+	Name             string `json:"name"`
+	AvailabilityMode string `json:"availability_mode"`
+	Device           Device `json:"device"`
+	UniqueId         string `json:"unique_id"`
+	StateTopic       string `json:"state_topic"`
+	ValueTemplate    string `json:"value_template"`
+	ExpireAfter      int    `json:"expire_after"`
+	Icon             string `json:"icon"`
+	Platform         string `json:"platform"`
+}
+
+var expiration int64 = 120
+var device = Device{
+	Manufacturer: "Rindula",
+	Model:        "Go",
+	Name:         "Teams Status",
+	SwVersion:    "1.2.2",
+	Identifiers:  "Teams Status",
+}
+
 func main() {
 	// create .env file, if not exists
 	if _, err := os.Stat(".env"); os.IsNotExist(err) {
@@ -67,12 +96,38 @@ func main() {
 	opts.SetMaxReconnectInterval(15 * time.Second)
 	opts.SetUsername(os.Getenv("MQTT_USER"))
 	opts.SetPassword(os.Getenv("MQTT_PASSWORD"))
+	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
+		fmt.Println("Connection lost, autoreconnect should reconnect in a second ...", err)
+	})
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
 		fmt.Println("Connected as", opts.ClientID)
-		sensor_availability := "{\"name\": \"Teams Availability\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"Rindula\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.1\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_availability\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.availability }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
-		sensor_activity := "{\"name\": \"Teams Activity\",\"availability_mode\": \"all\",\"device\": {\"manufacturer\": \"Rindula\",\"model\": \"Go\",\"name\": \"Teams Status\",\"sw_version\": \"1.2.1\",\"identifiers\": \"Teams Status\"},\"unique_id\": \"teams_presence_activity\",\"state_topic\": \"msteams/presence\",\"value_template\": \"{{ value_json.activity }}\",\"expire_after\": 120,\"icon\": \"mdi:eye\",\"platform\": \"mqtt\"}"
-		client.Publish("homeassistant/sensor/teams/availability/config", 1, false, sensor_availability)
-		client.Publish("homeassistant/sensor/teams/activity/config", 1, false, sensor_activity)
+		sensor_availability := HomeassistantDevice{
+			Name:             "Teams Availability",
+			AvailabilityMode: "all",
+			Device:           device,
+			UniqueId:         "teams_presence_availability",
+			StateTopic:       "msteams/presence",
+			ValueTemplate:    "{{ value_json.availability }}",
+			ExpireAfter:      int(expiration),
+			Icon:             "mdi:eye",
+			Platform:         "mqtt",
+		}
+
+		sensor_activity := HomeassistantDevice{
+			Name:             "Teams Activity",
+			AvailabilityMode: "all",
+			Device:           device,
+			UniqueId:         "teams_presence_activity",
+			StateTopic:       "msteams/presence",
+			ValueTemplate:    "{{ value_json.activity }}",
+			ExpireAfter:      int(expiration),
+			Icon:             "mdi:eye",
+			Platform:         "mqtt",
+		}
+		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
+		sensorActivityJSON, _ := json.Marshal(sensor_activity)
+		client.Publish("homeassistant/sensor/teams/availability/config", 1, false, string(sensorAvailabilityJSON))
+		client.Publish("homeassistant/sensor/teams/activity/config", 1, false, string(sensorActivityJSON))
 	})
 	client := mqtt.NewClient(opts)
 	if mqttToken := client.Connect(); mqttToken.Wait() && mqttToken.Error() != nil {
