@@ -2,11 +2,8 @@ FROM golang:latest as builder
 
 COPY . .
 
-ENV CGO_ENABLED=0
-RUN go build -o /usr/local/bin/msteams-presence
-
-# Set the file permissions
-RUN chmod +x /usr/local/bin/msteams-presence
+RUN make msteams-presence \
+    && mv ms-teams-presence /usr/local/bin/msteams-presence
 
 FROM debian:latest
 
