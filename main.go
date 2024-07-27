@@ -22,15 +22,18 @@ type Device struct {
 }
 
 type HomeassistantDevice struct {
-	Name             string `json:"name"`
-	AvailabilityMode string `json:"availability_mode"`
-	Device           Device `json:"device"`
-	UniqueId         string `json:"unique_id"`
-	StateTopic       string `json:"state_topic"`
-	ValueTemplate    string `json:"value_template"`
-	ExpireAfter      int    `json:"expire_after"`
-	Icon             string `json:"icon"`
-	Platform         string `json:"platform"`
+	Name                   string      `json:"name,omitempty"`
+	AvailabilityMode       string      `json:"availability_mode,omitempty"`
+	Device                 Device      `json:"device,omitempty"`
+	UniqueId               string      `json:"unique_id,omitempty"`
+	StateTopic             string      `json:"state_topic,omitempty"`
+	ValueTemplate          string      `json:"value_template,omitempty"`
+	ExpireAfter            int         `json:"expire_after,omitempty"`
+	Icon                   string      `json:"icon,omitempty"`
+	AvailabilityTemplate   string      `json:"availability_template,omitempty"`
+	JsonAttributesTopic    string      `json:"json_attributes_topic,omitempty"`
+	JsonAttributesTemplate string      `json:"json_attributes_template,omitempty"`
+	DeviceClass            DeviceClass `json:"device_class,omitempty"`
 }
 
 var expiration int64 = 120
@@ -38,7 +41,7 @@ var device = Device{
 	Manufacturer: "Rindula",
 	Model:        "Go",
 	Name:         "Teams Status",
-	SwVersion:    "1.2.2",
+	SwVersion:    "1.3.0",
 	Identifiers:  "Teams Status",
 }
 
@@ -110,7 +113,6 @@ func main() {
 			ValueTemplate:    "{{ value_json.availability }}",
 			ExpireAfter:      int(expiration),
 			Icon:             "mdi:eye",
-			Platform:         "mqtt",
 		}
 
 		sensor_activity := HomeassistantDevice{
@@ -122,12 +124,28 @@ func main() {
 			ValueTemplate:    "{{ value_json.activity }}",
 			ExpireAfter:      int(expiration),
 			Icon:             "mdi:eye",
-			Platform:         "mqtt",
+		}
+
+		sensor_status := HomeassistantDevice{
+			Name:                   "Teams Status Message",
+			AvailabilityMode:       "all",
+			Device:                 device,
+			UniqueId:               "teams_presence_status",
+			StateTopic:             "msteams/presence",
+			ValueTemplate:          "{{ value_json.statusMessage.message.content }}",
+			AvailabilityTemplate:   "{{ value_json.statusMessage != null }}",
+			ExpireAfter:            int(expiration),
+			Icon:                   "mdi:eye",
+			JsonAttributesTopic:    "msteams/presence",
+			JsonAttributesTemplate: "{{ value_json.statusMessage }}",
+			DeviceClass: 		     DeviceClassNone,
 		}
 		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
 		sensorActivityJSON, _ := json.Marshal(sensor_activity)
+		sensorStatusJSON, _ := json.Marshal(sensor_status)
 		client.Publish("homeassistant/sensor/teams/availability/config", 1, false, string(sensorAvailabilityJSON))
 		client.Publish("homeassistant/sensor/teams/activity/config", 1, false, string(sensorActivityJSON))
+		client.Publish("homeassistant/sensor/teams/status/config", 1, false, string(sensorStatusJSON))
 	})
 	client := mqtt.NewClient(opts)
 	if mqttToken := client.Connect(); mqttToken.Wait() && mqttToken.Error() != nil {
@@ -148,24 +166,25 @@ func main() {
 }
 
 func getPresence(token Token) map[string]interface{} {
+	defaultResponse := map[string]interface{}{"availability": "unknown", "activity": "unknown", "statusMessage": nil}
 	// get presence from microsoft graph api
 	url := "https://graph.microsoft.com/v1.0/me/presence"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println("Error requesting presence", err)
-		return map[string]interface{}{"availability": "unknown", "activity": "unknown"}
+		return defaultResponse
 	}
 	req.Header.Add("Authorization", "Bearer "+token.Token)
 	data, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error requesting presence", err)
-		return map[string]interface{}{"availability": "unknown", "activity": "unknown"}
+		return defaultResponse
 	}
 	defer data.Body.Close()
 
 	if data.StatusCode != 200 {
 		fmt.Println("Error requesting presence", data.StatusCode)
-		return map[string]interface{}{"availability": "unknown", "activity": "unknown"}
+		return defaultResponse
 	}
 
 	var presenceMap map[string]interface{}
