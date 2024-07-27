@@ -3,7 +3,7 @@ FROM golang:latest as builder
 COPY . .
 
 RUN make msteams-presence \
-    && mv ms-teams-presence /usr/local/bin/msteams-presence
+    && cp ms-teams-presence /usr/local/bin/msteams-presence
 
 FROM debian:latest
 
