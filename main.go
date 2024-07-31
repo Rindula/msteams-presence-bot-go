@@ -180,7 +180,12 @@ func getPresence(token Token) map[string]interface{} {
 		fmt.Println("Error requesting presence", err)
 		return defaultResponse
 	}
-	defer data.Body.Close()
+	defer func() {
+		err := data.Body.Close()
+		if err != nil {
+			fmt.Println("Error closing response body", err)
+		}
+	}()
 
 	if data.StatusCode != 200 {
 		fmt.Println("Error requesting presence", data.StatusCode)

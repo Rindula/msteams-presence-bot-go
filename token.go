@@ -158,7 +158,12 @@ func requestRefreshToken(oldToken *Token) string {
 		fmt.Println("Error requesting token", err)
 		os.Exit(1)
 	}
-	defer deviceCodeResponse.Body.Close()
+	defer func() {
+		err:= deviceCodeResponse.Body.Close()
+		if err != nil {
+			fmt.Println("Error closing response body (refreshtoken)", err)
+		}
+	}()
 
 	var deviceCodeMap map[string]interface{}
 	json.NewDecoder(deviceCodeResponse.Body).Decode(&deviceCodeMap)
