@@ -95,12 +95,12 @@ func main() {
 	})
 	opts.SetPingTimeout(1 * time.Second)
 	opts.SetKeepAlive(2 * time.Second)
-	opts.SetAutoReconnect(true)
+	opts.SetAutoReconnect(false)
 	opts.SetMaxReconnectInterval(15 * time.Second)
 	opts.SetUsername(os.Getenv("MQTT_USER"))
 	opts.SetPassword(os.Getenv("MQTT_PASSWORD"))
 	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
-		fmt.Println("Connection lost, autoreconnect should reconnect in a second ...", err)
+		panic("MQTT connection lost: " + err.Error())
 	})
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
 		fmt.Println("Connected as", opts.ClientID)
