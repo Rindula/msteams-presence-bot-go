@@ -1,8 +1,10 @@
 FROM golang:latest as builder
 
+ARG APP_VERSION=0.0.0
+
 COPY . .
 
-RUN make msteams-presence \
+RUN make msteams-presence APP_VERSION=${APP_VERSION} \
     && cp msteams-presence /usr/local/bin/msteams-presence
 
 FROM debian:latest

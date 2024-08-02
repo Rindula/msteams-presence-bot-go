@@ -13,6 +13,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var version string
+
 type Device struct {
 	Manufacturer string `json:"manufacturer"`
 	Model        string `json:"model"`
@@ -41,7 +43,7 @@ var device = Device{
 	Manufacturer: "Rindula",
 	Model:        "Go",
 	Name:         "Teams Status",
-	SwVersion:    "1.3.0",
+	SwVersion:    version,
 	Identifiers:  "Teams Status",
 }
 
@@ -138,7 +140,7 @@ func main() {
 			Icon:                   "mdi:eye",
 			JsonAttributesTopic:    "msteams/presence",
 			JsonAttributesTemplate: "{{ value_json.statusMessage }}",
-			DeviceClass: 		     DeviceClassNone,
+			DeviceClass:            DeviceClassNone,
 		}
 		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
 		sensorActivityJSON, _ := json.Marshal(sensor_activity)
