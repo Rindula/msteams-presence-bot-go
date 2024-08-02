@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"rindula/msteams-presence/homeassistant"
+	"rindula/msteams-presence/token"
 	"strconv"
 	"strings"
 	"time"
-	"rindula/msteams-presence/token"
-	"rindula/msteams-presence/deviceClass"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
@@ -26,18 +26,18 @@ type Device struct {
 }
 
 type HomeassistantDevice struct {
-	Name                   string      `json:"name,omitempty"`
-	AvailabilityMode       string      `json:"availability_mode,omitempty"`
-	Device                 Device      `json:"device,omitempty"`
-	UniqueId               string      `json:"unique_id,omitempty"`
-	StateTopic             string      `json:"state_topic,omitempty"`
-	ValueTemplate          string      `json:"value_template,omitempty"`
-	ExpireAfter            int         `json:"expire_after,omitempty"`
-	Icon                   string      `json:"icon,omitempty"`
-	AvailabilityTemplate   string      `json:"availability_template,omitempty"`
-	JsonAttributesTopic    string      `json:"json_attributes_topic,omitempty"`
-	JsonAttributesTemplate string      `json:"json_attributes_template,omitempty"`
-	DeviceClass            deviceClass.DeviceClass `json:"device_class,omitempty"`
+	Name                   string                    `json:"name,omitempty"`
+	AvailabilityMode       string                    `json:"availability_mode,omitempty"`
+	Device                 Device                    `json:"device,omitempty"`
+	UniqueId               string                    `json:"unique_id,omitempty"`
+	StateTopic             string                    `json:"state_topic,omitempty"`
+	ValueTemplate          string                    `json:"value_template,omitempty"`
+	ExpireAfter            int                       `json:"expire_after,omitempty"`
+	Icon                   string                    `json:"icon,omitempty"`
+	AvailabilityTemplate   string                    `json:"availability_template,omitempty"`
+	JsonAttributesTopic    string                    `json:"json_attributes_topic,omitempty"`
+	JsonAttributesTemplate string                    `json:"json_attributes_template,omitempty"`
+	DeviceClass            homeassistant.DeviceClass `json:"device_class,omitempty"`
 }
 
 var expiration int64 = 120
@@ -141,7 +141,7 @@ func main() {
 			Icon:                   "mdi:eye",
 			JsonAttributesTopic:    "msteams/presence",
 			JsonAttributesTemplate: "{{ value_json.statusMessage }}",
-			DeviceClass:            deviceClass.DeviceClassNone,
+			DeviceClass:            homeassistant.DeviceClassNone,
 		}
 		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
 		sensorActivityJSON, _ := json.Marshal(sensor_activity)

@@ -1,4 +1,4 @@
-package deviceClass
+package homeassistant
 
 type DeviceClass string
 
