@@ -168,7 +168,7 @@ func main() {
 }
 
 func getPresence(token Token) map[string]interface{} {
-	defaultResponse := map[string]interface{}{"availability": "unknown", "activity": "unknown", "statusMessage": nil}
+	defaultResponse := map[string]interface{}{"@odata.context": "", "availability": "unknown", "activity": "unknown", "statusMessage": nil, "id": ""}
 	// get presence from microsoft graph api
 	url := "https://graph.microsoft.com/v1.0/me/presence"
 	req, err := http.NewRequest("GET", url, nil)
