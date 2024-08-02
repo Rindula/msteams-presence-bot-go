@@ -136,11 +136,9 @@ func main() {
 			Device:                 device,
 			UniqueId:               "teams_presence_status",
 			StateTopic:             "msteams/presence",
-			ValueTemplate:          "{{ value_json.statusMessage.message.content }}",
+			ValueTemplate:          "{{ value_json.statusMessage.message.content |default('') }}",
 			ExpireAfter:            int(expiration),
 			Icon:                   "mdi:eye",
-			JsonAttributesTopic:    "msteams/presence",
-			JsonAttributesTemplate: "{{ value_json.statusMessage }}",
 			DeviceClass:            homeassistant.DeviceClassNone,
 		}
 		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
