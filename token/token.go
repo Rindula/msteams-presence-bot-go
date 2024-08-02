@@ -103,30 +103,27 @@ func requestToken(oldToken *Token) Token {
 	payloadData.Set("client_id", clientId)
 	payloadData.Set("scope", scope)
 	payloadData.Set("refresh_token", oldToken.RefreshToken)
-	payload := strings.NewReader(payloadData.Encode())
-	req, err := http.NewRequest("POST", urlString, payload)
+	resp, err := http.PostForm(urlString, payloadData)
 	if err != nil {
 		fmt.Println("Error requesting token", err)
 		return Token{}
 	}
 
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	tokenResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error requesting token:", err)
 		return Token{}
 	}
-	defer tokenResponse.Body.Close()
+	defer resp.Body.Close()
 
-	if tokenResponse.StatusCode != 200 {
+	if resp.StatusCode != 200 {
 		var body map[string]interface{}
-		json.NewDecoder(tokenResponse.Body).Decode(&body)
-		fmt.Println("Error requesting token:", tokenResponse.Status, body)
+		json.NewDecoder(resp.Body).Decode(&body)
+		fmt.Println("Error requesting token:", resp.Status, body)
 		return Token{}
 	}
 
 	var tokenMap map[string]interface{}
-	json.NewDecoder(tokenResponse.Body).Decode(&tokenMap)
+	json.NewDecoder(resp.Body).Decode(&tokenMap)
 	var token Token
 	token.RefreshToken = tokenMap["refresh_token"].(string)
 	token.Token = tokenMap["access_token"].(string)
@@ -144,29 +141,24 @@ func requestRefreshToken(oldToken *Token) string {
 	clientId := os.Getenv("CLIENT_ID")
 	scope := os.Getenv("GRAPH_USER_SCOPES")
 	tenantId := os.Getenv("AUTH_TENANT")
-	url := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/devicecode", tenantId)
-	payload := strings.NewReader(fmt.Sprintf("client_id=%s&scope=%s", clientId, scope))
-	req, err := http.NewRequest("POST", url, payload)
+	deviceCodeUrl := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/devicecode", tenantId)
+	payloadData := url.Values{}
+	payloadData.Add("client_id", clientId)
+	payloadData.Add("scope", scope)
+	resp, err := http.PostForm(deviceCodeUrl, payloadData)
 	if err != nil {
-		fmt.Println("Error requesting token on device code flow with url", url, err)
-		os.Exit(1)
-	}
-
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	deviceCodeResponse, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Println("Error requesting token", err)
+		fmt.Println("Error requesting token on device code flow with url", deviceCodeUrl, err)
 		os.Exit(1)
 	}
 	defer func() {
-		err := deviceCodeResponse.Body.Close()
+		err := resp.Body.Close()
 		if err != nil {
 			fmt.Println("Error closing response body (refreshtoken)", err)
 		}
 	}()
 
 	var deviceCodeMap map[string]interface{}
-	json.NewDecoder(deviceCodeResponse.Body).Decode(&deviceCodeMap)
+	json.NewDecoder(resp.Body).Decode(&deviceCodeMap)
 
 	worksUntil := time.Now().Unix() + int64(deviceCodeMap["expires_in"].(float64))
 
@@ -194,26 +186,28 @@ func checkToken(deviceCode string) string {
 	clientId := os.Getenv("CLIENT_ID")
 	scope := os.Getenv("GRAPH_USER_SCOPES")
 	tenantId := os.Getenv("AUTH_TENANT")
-	url := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", tenantId)
-	payload := strings.NewReader(fmt.Sprintf("grant_type=urn:ietf:params:oauth:grant-type:device_code&client_id=%s&scope=%s&device_code=%s", clientId, scope, deviceCode))
-	req, err := http.NewRequest("POST", url, payload)
+	tokenUrl := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", tenantId)
+	payloadData := url.Values{}
+	payloadData.Add("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+	payloadData.Add("client_id", clientId)
+	payloadData.Add("scope", scope)
+	payloadData.Add("device_code", deviceCode)
+	resp, err := http.PostForm(tokenUrl, payloadData)
 	if err != nil {
 		fmt.Println("Error requesting token", err)
 		os.Exit(1)
 	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	tokenResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error requesting token", err)
 		os.Exit(1)
 	}
-	defer tokenResponse.Body.Close()
+	defer resp.Body.Close()
 
-	if tokenResponse.StatusCode != 200 {
+	if resp.StatusCode != 200 {
 		return ""
 	}
 
 	var tokenMap map[string]interface{}
-	json.NewDecoder(tokenResponse.Body).Decode(&tokenMap)
+	json.NewDecoder(resp.Body).Decode(&tokenMap)
 	return tokenMap["refresh_token"].(string)
 }
