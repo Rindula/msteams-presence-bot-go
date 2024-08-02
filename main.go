@@ -135,7 +135,6 @@ func main() {
 			UniqueId:               "teams_presence_status",
 			StateTopic:             "msteams/presence",
 			ValueTemplate:          "{{ value_json.statusMessage.message.content }}",
-			AvailabilityTemplate:   "{{ value_json.statusMessage != null }}",
 			ExpireAfter:            int(expiration),
 			Icon:                   "mdi:eye",
 			JsonAttributesTopic:    "msteams/presence",
