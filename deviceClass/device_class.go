@@ -1,4 +1,4 @@
-package main
+package deviceClass
 
 type DeviceClass string
 

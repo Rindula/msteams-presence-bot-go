@@ -1,4 +1,4 @@
-package main
+package token
 
 import (
 	"bufio"
@@ -51,7 +51,7 @@ func saveToken(token Token) bool {
 	return true
 }
 
-func getToken() Token {
+func GetToken() Token {
 	var token Token
 
 	// Get token from file
@@ -59,14 +59,14 @@ func getToken() Token {
 	if err != nil {
 		fmt.Println("Error reading token file:", err)
 		requestToken(&Token{})
-		return getToken()
+		return GetToken()
 	}
 
 	decoded, errDecode := base64.StdEncoding.DecodeString(string(fileContent))
 	if errDecode != nil {
 		fmt.Println("Error reading token file:", errDecode)
 		requestToken(&Token{})
-		return getToken()
+		return GetToken()
 	}
 	b := bytes.Buffer{}
 	b.Write(decoded)
@@ -75,7 +75,7 @@ func getToken() Token {
 	if errDecode != nil {
 		fmt.Println("Error reading token file:", errDecode)
 		requestToken(&Token{})
-		return getToken()
+		return GetToken()
 	}
 
 	// Check if token is valid and not expired
@@ -159,7 +159,7 @@ func requestRefreshToken(oldToken *Token) string {
 		os.Exit(1)
 	}
 	defer func() {
-		err:= deviceCodeResponse.Body.Close()
+		err := deviceCodeResponse.Body.Close()
 		if err != nil {
 			fmt.Println("Error closing response body (refreshtoken)", err)
 		}

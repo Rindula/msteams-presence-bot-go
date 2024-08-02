@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"rindula/msteams-presence/token"
+	"rindula/msteams-presence/deviceClass"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
@@ -35,7 +37,7 @@ type HomeassistantDevice struct {
 	AvailabilityTemplate   string      `json:"availability_template,omitempty"`
 	JsonAttributesTopic    string      `json:"json_attributes_topic,omitempty"`
 	JsonAttributesTemplate string      `json:"json_attributes_template,omitempty"`
-	DeviceClass            DeviceClass `json:"device_class,omitempty"`
+	DeviceClass            deviceClass.DeviceClass `json:"device_class,omitempty"`
 }
 
 var expiration int64 = 120
@@ -139,7 +141,7 @@ func main() {
 			Icon:                   "mdi:eye",
 			JsonAttributesTopic:    "msteams/presence",
 			JsonAttributesTemplate: "{{ value_json.statusMessage }}",
-			DeviceClass:            DeviceClassNone,
+			DeviceClass:            deviceClass.DeviceClassNone,
 		}
 		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
 		sensorActivityJSON, _ := json.Marshal(sensor_activity)
@@ -158,7 +160,7 @@ func main() {
 		if !client.IsConnected() {
 			panic("MQTT client is not connected")
 		}
-		presence := getPresence(getToken())
+		presence := getPresence(token.GetToken())
 		presenceJson, _ := json.Marshal(presence)
 		fmt.Println(string(presenceJson))
 		token := client.Publish("msteams/presence", 0, false, string(presenceJson))
@@ -166,7 +168,7 @@ func main() {
 	}
 }
 
-func getPresence(token Token) map[string]interface{} {
+func getPresence(token token.Token) map[string]interface{} {
 	defaultResponse := map[string]interface{}{"@odata.context": "", "availability": "unknown", "activity": "unknown", "statusMessage": nil, "id": ""}
 	// get presence from microsoft graph api
 	url := "https://graph.microsoft.com/v1.0/me/presence"
