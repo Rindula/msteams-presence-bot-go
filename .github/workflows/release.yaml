@@ -48,7 +48,7 @@ jobs:
       run: |
         go build -ldflags "-X main.version=${APP_VERSION}" -o msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }} .
     - name: Archive
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }}
         path: msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }}
