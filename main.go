@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"rindula/msteams-presence/homeassistant"
@@ -16,6 +17,7 @@ import (
 )
 
 var version string
+var latestVersion string
 
 type Device struct {
 	Manufacturer string `json:"manufacturer"`
@@ -54,8 +56,7 @@ func main() {
 	if _, err := os.Stat(".env"); os.IsNotExist(err) {
 		file, err := os.Create(".env")
 		if err != nil {
-			fmt.Println("Error creating .env file", err)
-			os.Exit(1)
+			log.Fatalln("Error creating .env file", err)
 		}
 		defer file.Close()
 		// check if the environment variables are set and exit if not
@@ -67,8 +68,7 @@ func main() {
 			file.WriteString("MQTT_PASSWORD=\n")
 			file.WriteString("MQTT_HOST=\n")
 			file.WriteString("MQTT_PORT=1883\n")
-			fmt.Println("Please fill in the .env file")
-			os.Exit(1)
+			log.Fatalln("Please fill in the .env file")
 		} else {
 			// fill in the .env file
 			envs := os.Environ()
@@ -86,16 +86,17 @@ func main() {
 	err := godotenv.Load(".env")
 
 	if err != nil {
-		fmt.Println("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
+	latestVersion = version
 
 	// initialize mqtt client
 	port, _ := strconv.Atoi(os.Getenv("MQTT_PORT"))
 	opts := mqtt.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s:%d", os.Getenv("MQTT_HOST"), port))
 	opts.SetClientID(fmt.Sprintf("go-presence-bot-%v", time.Now().UnixNano()))
 	opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
-		fmt.Printf("TOPIC: %s\n", msg.Topic())
-		fmt.Printf("MSG: %s\n", msg.Payload())
+		log.Printf("TOPIC: %s\n", msg.Topic())
+		log.Printf("MSG: %s\n", msg.Payload())
 	})
 	opts.SetPingTimeout(1 * time.Second)
 	opts.SetKeepAlive(2 * time.Second)
@@ -131,15 +132,15 @@ func main() {
 		}
 
 		sensor_status := HomeassistantDevice{
-			Name:                   "Teams Status Message",
-			AvailabilityMode:       "all",
-			Device:                 device,
-			UniqueId:               "teams_presence_status",
-			StateTopic:             "msteams/presence",
-			ValueTemplate:          "{{ value_json.statusMessage.message.content |default('') }}",
-			ExpireAfter:            int(expiration),
-			Icon:                   "mdi:eye",
-			DeviceClass:            homeassistant.DeviceClassNone,
+			Name:             "Teams Status Message",
+			AvailabilityMode: "all",
+			Device:           device,
+			UniqueId:         "teams_presence_status",
+			StateTopic:       "msteams/presence",
+			ValueTemplate:    "{{ value_json.statusMessage.message.content |default('') }}",
+			ExpireAfter:      int(expiration),
+			Icon:             "mdi:eye",
+			DeviceClass:      homeassistant.DeviceClassNone,
 		}
 		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
 		sensorActivityJSON, _ := json.Marshal(sensor_activity)
@@ -160,7 +161,7 @@ func main() {
 		}
 		presence := getPresence(token.GetToken())
 		presenceJson, _ := json.Marshal(presence)
-		fmt.Println(string(presenceJson))
+		log.Println(string(presenceJson))
 		token := client.Publish("msteams/presence", 0, false, string(presenceJson))
 		token.Wait()
 	}
@@ -172,24 +173,24 @@ func getPresence(token token.Token) map[string]interface{} {
 	url := "https://graph.microsoft.com/v1.0/me/presence"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Println("Error requesting presence", err)
+		log.Println("Error requesting presence", err)
 		return defaultResponse
 	}
 	req.Header.Add("Authorization", "Bearer "+token.Token)
 	data, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("Error requesting presence", err)
+		log.Println("Error requesting presence", err)
 		return defaultResponse
 	}
 	defer func() {
 		err := data.Body.Close()
 		if err != nil {
-			fmt.Println("Error closing response body", err)
+			log.Fatalln("Error closing response body", err)
 		}
 	}()
 
 	if data.StatusCode != 200 {
-		fmt.Println("Error requesting presence", data.StatusCode)
+		log.Println("Error requesting presence", data.StatusCode)
 		return defaultResponse
 	}
 
