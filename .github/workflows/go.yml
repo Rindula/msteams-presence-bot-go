@@ -27,6 +27,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     steps:
     - uses: actions/checkout@v4
 
@@ -59,6 +61,7 @@ jobs:
           type=semver,pattern={{major}}
     - name: Create Docker Image
       uses: docker/build-push-action@v6
+      id: push
       with:
         context: .
         file: ./Dockerfile
@@ -69,3 +72,13 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           APP_VERSION=${{ github.ref_name }}
+    - name: Attest
+      uses: actions/attest@v1
+      if: ${{ github.event_name == 'push' }}
+      id: attest
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.push.outputs.digest }}
+        predicate-type: 'https://in-toto.io/attestation/release'
+        predicate: '{"purl":"pkg:oci/${{ steps.push.outputs.digest }}"}'
+        push-to-registry: true

@@ -38,6 +38,7 @@ jobs:
     permissions:
       contents: write
       attestations: write
+      id-token: write
     steps:
     - uses: actions/checkout@v4
     - name: Build
@@ -47,6 +48,11 @@ jobs:
         GOARCH: ${{ matrix.goarch }}
       run: |
         go build -ldflags "-X main.version=${APP_VERSION}" -o msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} .
+    - uses: actions/attest@v1
+      with:
+        subject-path: msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+        predicate-type: https://in-toto.io/attestation/release
+        predicate: '{"purl":"pkg:${{ github.sha }}-${{ matrix.goos }}-${{ matrix.goarch }}"}'
     - name: Archive
       uses: actions/upload-artifact@v4
       with:
