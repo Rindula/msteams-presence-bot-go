@@ -1,4 +1,4 @@
-module rindula/msteams-presence
+module github.com/rindula/msteams-presence-bot-go
 
 go 1.21
 
