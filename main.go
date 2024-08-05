@@ -3,21 +3,23 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
-	"rindula/msteams-presence/homeassistant"
-	"rindula/msteams-presence/token"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rindula/msteams-presence-bot-go/homeassistant"
+	"github.com/rindula/msteams-presence-bot-go/token"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
 )
 
-var version string
-var latestVersion string
+var version string = "development"
+var latestVersion Release
 
 type Device struct {
 	Manufacturer string `json:"manufacturer"`
@@ -28,18 +30,29 @@ type Device struct {
 }
 
 type HomeassistantDevice struct {
-	Name                   string                    `json:"name,omitempty"`
-	AvailabilityMode       string                    `json:"availability_mode,omitempty"`
-	Device                 Device                    `json:"device,omitempty"`
-	UniqueId               string                    `json:"unique_id,omitempty"`
-	StateTopic             string                    `json:"state_topic,omitempty"`
-	ValueTemplate          string                    `json:"value_template,omitempty"`
-	ExpireAfter            int                       `json:"expire_after,omitempty"`
-	Icon                   string                    `json:"icon,omitempty"`
-	AvailabilityTemplate   string                    `json:"availability_template,omitempty"`
-	JsonAttributesTopic    string                    `json:"json_attributes_topic,omitempty"`
-	JsonAttributesTemplate string                    `json:"json_attributes_template,omitempty"`
-	DeviceClass            homeassistant.DeviceClass `json:"device_class,omitempty"`
+	Name                   string                       `json:"name,omitempty"`
+	AvailabilityMode       string                       `json:"availability_mode,omitempty"`
+	Device                 Device                       `json:"device,omitempty"`
+	UniqueId               string                       `json:"unique_id,omitempty"`
+	StateTopic             string                       `json:"state_topic"`
+	ValueTemplate          string                       `json:"value_template,omitempty"`
+	ExpireAfter            int                          `json:"expire_after,omitempty"`
+	Icon                   string                       `json:"icon,omitempty"`
+	AvailabilityTemplate   string                       `json:"availability_template,omitempty"`
+	JsonAttributesTopic    string                       `json:"json_attributes_topic,omitempty"`
+	JsonAttributesTemplate string                       `json:"json_attributes_template,omitempty"`
+	DeviceClass            homeassistant.DeviceClass    `json:"device_class,omitempty"`
+	PayloadAvailable       string                       `json:"payload_available,omitempty"`
+	PayloadNotAvailable    string                       `json:"payload_not_available,omitempty"`
+	EntityCategory         homeassistant.EntityCategory `json:"entity_category,omitempty"`
+	LatestVersionTopic     string                       `json:"latest_version_topic,omitempty"`
+	LatestVersionTemplate  string                       `json:"latest_version_template,omitempty"`
+	ReleaseUrl			 string                       `json:"release_url,omitempty"`
+}
+
+type Version struct {
+	Version string  `json:"version"`
+	Latest  Release `json:"latest"`
 }
 
 var expiration int64 = 120
@@ -88,7 +101,7 @@ func main() {
 	if err != nil {
 		log.Println("Error loading .env file")
 	}
-	latestVersion = version
+	latestVersion = Release{TagName: version, Url: ""}
 
 	// initialize mqtt client
 	port, _ := strconv.Atoi(os.Getenv("MQTT_PORT"))
@@ -132,27 +145,47 @@ func main() {
 		}
 
 		sensor_status := HomeassistantDevice{
-			Name:             "Teams Status Message",
-			AvailabilityMode: "all",
-			Device:           device,
-			UniqueId:         "teams_presence_status",
-			StateTopic:       "msteams/presence",
-			ValueTemplate:    "{{ value_json.statusMessage.message.content |default('') }}",
-			ExpireAfter:      int(expiration),
-			Icon:             "mdi:eye",
-			DeviceClass:      homeassistant.DeviceClassNone,
+			Name:                "Teams Status Message",
+			AvailabilityMode:    "all",
+			Device:              device,
+			UniqueId:            "teams_presence_status",
+			StateTopic:          "msteams/presence",
+			ValueTemplate:       "{{ value_json.statusMessage.message.content }}",
+			ExpireAfter:         int(expiration),
+			Icon:                "mdi:eye",
+			DeviceClass:         homeassistant.DeviceClassNone,
+			PayloadNotAvailable: "",
+		}
+
+		sensor_update := HomeassistantDevice{
+			Name:                  "Teams Status Update",
+			AvailabilityMode:      "all",
+			Device:                device,
+			UniqueId:              "teams_presence_update",
+			StateTopic:            "msteams/version",
+			ValueTemplate:         "{{ value_json.version }}",
+			ExpireAfter:           int(expiration),
+			Icon:                  "mdi:update",
+			DeviceClass:           homeassistant.DeviceClassFirmware,
+			EntityCategory:        homeassistant.EntityCategoryDiagnostic,
+			LatestVersionTopic:    "msteams/version",
+			LatestVersionTemplate: "{{ value_json.latest.tag_name }}",
+			ReleaseUrl: 		  "{{ value_json.latest.url }}",
 		}
 		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
 		sensorActivityJSON, _ := json.Marshal(sensor_activity)
 		sensorStatusJSON, _ := json.Marshal(sensor_status)
+		sensorUpdateJSON, _ := json.Marshal(sensor_update)
 		client.Publish("homeassistant/sensor/teams/availability/config", 1, false, string(sensorAvailabilityJSON))
 		client.Publish("homeassistant/sensor/teams/activity/config", 1, false, string(sensorActivityJSON))
 		client.Publish("homeassistant/sensor/teams/status/config", 1, false, string(sensorStatusJSON))
+		client.Publish("homeassistant/sensor/teams/update/config", 1, false, string(sensorUpdateJSON))
 	})
 	client := mqtt.NewClient(opts)
 	if mqttToken := client.Connect(); mqttToken.Wait() && mqttToken.Error() != nil {
 		panic(mqttToken.Error())
 	}
+	go updateCheck()
 	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
 		// check if client is still connected, else panic
@@ -161,26 +194,45 @@ func main() {
 		}
 		presence := getPresence(token.GetToken())
 		presenceJson, _ := json.Marshal(presence)
-		log.Println(string(presenceJson))
+		log.Println(string(presenceJson), version, latestVersion)
+
 		token := client.Publish("msteams/presence", 0, false, string(presenceJson))
-		token.Wait()
+		go func() {
+			token.Wait()
+			if token.Error() != nil {
+				log.Panicln("Error publishing presence:", token.Error())
+			}
+		}()
+		v := Version{Version: version, Latest: latestVersion}
+		versionJson, _ := json.Marshal(v)
+		versionToken := client.Publish("msteams/version", 0, false, versionJson)
+		go func() {
+			versionToken.Wait()
+			if versionToken.Error() != nil {
+				log.Panicln("Error publishing version:", versionToken.Error())
+			}
+		}()
 	}
 }
 
-func getPresence(token token.Token) map[string]interface{} {
-	defaultResponse := map[string]interface{}{"@odata.context": "", "availability": "unknown", "activity": "unknown", "statusMessage": nil, "id": ""}
+func getPresence(token token.Token) Presence {
+	presence := Presence{
+		Availability:  "unknown",
+		Activity:      "unknown",
+		StatusMessage: nil,
+	}
 	// get presence from microsoft graph api
 	url := "https://graph.microsoft.com/v1.0/me/presence"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Println("Error requesting presence", err)
-		return defaultResponse
+		return presence
 	}
 	req.Header.Add("Authorization", "Bearer "+token.Token)
 	data, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Println("Error requesting presence", err)
-		return defaultResponse
+		return presence
 	}
 	defer func() {
 		err := data.Body.Close()
@@ -191,11 +243,15 @@ func getPresence(token token.Token) map[string]interface{} {
 
 	if data.StatusCode != 200 {
 		log.Println("Error requesting presence", data.StatusCode)
-		return defaultResponse
+		return presence
 	}
 
-	var presenceMap map[string]interface{}
-	json.NewDecoder(data.Body).Decode(&presenceMap)
+	body, err := io.ReadAll(data.Body)
+	if err != nil {
+		log.Println("Error reading response body", err)
+		return presence
+	}
+	json.Unmarshal(body, &presence)
 
-	return presenceMap
+	return presence
 }

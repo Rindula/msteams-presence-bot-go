@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -27,7 +28,7 @@ func saveToken(token Token) bool {
 	fmt.Println("Saving token to file...")
 	file, errCreateFile := os.Create(tokenFile)
 	if errCreateFile != nil {
-		fmt.Println("Error saving token", errCreateFile)
+		fmt.Println("[pasgka] Error saving token", errCreateFile)
 		return false
 	}
 	defer file.Close()
@@ -36,14 +37,14 @@ func saveToken(token Token) bool {
 	e := gob.NewEncoder(&b)
 	errEncode := e.Encode(token)
 	if errEncode != nil {
-		fmt.Println("Error saving token", errEncode)
+		fmt.Println("[snogim] Error saving token", errEncode)
 		return false
 	}
 
 	writer := bufio.NewWriter(file)
 	_, errWrite := writer.WriteString(base64.StdEncoding.EncodeToString(b.Bytes()))
 	if errWrite != nil {
-		fmt.Println("Error saving token", errWrite)
+		fmt.Println("[oseigj] Error saving token", errWrite)
 		return false
 	}
 
@@ -56,14 +57,14 @@ func GetToken() Token {
 	// Get token from file
 	fileContent, err := os.ReadFile(tokenFile)
 	if err != nil {
-		fmt.Println("Error reading token file:", err)
+		log.Println("[siogre] Error reading token file:", err)
 		requestToken(&Token{})
 		return GetToken()
 	}
 
 	decoded, errDecode := base64.StdEncoding.DecodeString(string(fileContent))
 	if errDecode != nil {
-		fmt.Println("Error reading token file:", errDecode)
+		log.Println("[usieog] Error reading token file:", errDecode)
 		requestToken(&Token{})
 		return GetToken()
 	}
@@ -72,7 +73,7 @@ func GetToken() Token {
 	d := gob.NewDecoder(&b)
 	errDecode = d.Decode(&token)
 	if errDecode != nil {
-		fmt.Println("Error reading token file:", errDecode)
+		log.Println("[srhigf] Error reading token file:", errDecode)
 		requestToken(&Token{})
 		return GetToken()
 	}
@@ -92,7 +93,7 @@ func requestToken(oldToken *Token) Token {
 		requestRefreshToken(oldToken)
 	}
 	// request microsoft graph token
-	fmt.Println("Requesting usable token...")
+	log.Println("Requesting usable token...")
 	clientId := os.Getenv("CLIENT_ID")
 	scope := os.Getenv("GRAPH_USER_SCOPES")
 	tenantId := os.Getenv("AUTH_TENANT")
@@ -104,12 +105,7 @@ func requestToken(oldToken *Token) Token {
 	payloadData.Set("refresh_token", oldToken.RefreshToken)
 	resp, err := http.PostForm(urlString, payloadData)
 	if err != nil {
-		fmt.Println("Error requesting token", err)
-		return Token{}
-	}
-
-	if err != nil {
-		fmt.Println("Error requesting token:", err)
+		log.Println("[xgjipt] Error requesting token", err)
 		return Token{}
 	}
 	defer resp.Body.Close()
@@ -117,8 +113,13 @@ func requestToken(oldToken *Token) Token {
 	if resp.StatusCode != 200 {
 		var body map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&body)
-		fmt.Println("Error requesting token:", resp.Status, body)
-		return Token{}
+		log.Println("[akfswg] Error requesting token:", resp.Status, body)
+		if oldToken.RefreshToken != "" {
+			t := Token{}
+			return requestToken(&t)
+		} else {
+			return Token{}
+		}
 	}
 
 	var tokenMap map[string]interface{}
@@ -128,7 +129,7 @@ func requestToken(oldToken *Token) Token {
 	token.Token = tokenMap["access_token"].(string)
 	token.ValidUntil = time.Now().Unix() + int64(tokenMap["expires_in"].(float64))
 	if !saveToken(token) {
-		fmt.Println("Error saving token")
+		log.Println("[rhejil] Error saving token")
 		return Token{}
 	}
 	return token
@@ -146,13 +147,12 @@ func requestRefreshToken(oldToken *Token) string {
 	payloadData.Add("scope", scope)
 	resp, err := http.PostForm(deviceCodeUrl, payloadData)
 	if err != nil {
-		fmt.Println("Error requesting token on device code flow with url", deviceCodeUrl, err)
-		os.Exit(1)
+		log.Fatalln("[dfiqwc] Error requesting token on device code flow with url", deviceCodeUrl, err)
 	}
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
-			fmt.Println("Error closing response body (refreshtoken)", err)
+			log.Fatalln("[dfibet] Error closing response body (refreshtoken)", err)
 		}
 	}()
 
@@ -161,20 +161,20 @@ func requestRefreshToken(oldToken *Token) string {
 
 	worksUntil := time.Now().Unix() + int64(deviceCodeMap["expires_in"].(float64))
 
-	fmt.Println("Please go to " + deviceCodeMap["verification_uri"].(string) + " and enter the code " + deviceCodeMap["user_code"].(string))
+	log.Println("Please go to " + deviceCodeMap["verification_uri"].(string) + " and enter the code " + deviceCodeMap["user_code"].(string))
 	for {
 		// check if token is valid
 		token := checkToken(deviceCodeMap["device_code"].(string))
-		fmt.Printf("Waiting for %d more seconds\r", worksUntil-time.Now().Unix())
+		log.Printf("Waiting for %d more seconds", worksUntil-time.Now().Unix())
 		if token != "" {
 			oldToken.RefreshToken = token
-			fmt.Println("Token received                     ")
+			log.Println("Token received                     ")
 			return token
 		}
 		time.Sleep(time.Duration(deviceCodeMap["interval"].(float64)) * time.Second)
 
 		if time.Now().Unix() > worksUntil {
-			fmt.Println("Token expired")
+			log.Println("Token expired")
 			return ""
 		}
 	}
@@ -193,17 +193,12 @@ func checkToken(deviceCode string) string {
 	payloadData.Add("device_code", deviceCode)
 	resp, err := http.PostForm(tokenUrl, payloadData)
 	if err != nil {
-		fmt.Println("Error requesting token", err)
-		os.Exit(1)
-	}
-	if err != nil {
-		fmt.Println("Error requesting token", err)
-		os.Exit(1)
+		log.Fatalln("[ruiurb] Error requesting token", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return ""
+		return "" // no token yet, try again in the next run
 	}
 
 	var tokenMap map[string]interface{}
