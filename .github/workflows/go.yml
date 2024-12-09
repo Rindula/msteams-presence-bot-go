@@ -73,7 +73,7 @@ jobs:
         build-args: |
           APP_VERSION=${{ github.ref_name }}
     - name: Attest
-      uses: actions/attest@v1
+      uses: actions/attest@v2
       if: ${{ github.event_name == 'push' }}
       id: attest
       with:
