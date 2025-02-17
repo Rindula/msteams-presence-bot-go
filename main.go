@@ -47,7 +47,7 @@ type HomeassistantDevice struct {
 	EntityCategory         homeassistant.EntityCategory `json:"entity_category,omitempty"`
 	LatestVersionTopic     string                       `json:"latest_version_topic,omitempty"`
 	LatestVersionTemplate  string                       `json:"latest_version_template,omitempty"`
-	ReleaseUrl			 string                       `json:"release_url,omitempty"`
+	ReleaseUrl             string                       `json:"release_url,omitempty"`
 }
 
 type Version struct {
@@ -122,70 +122,14 @@ func main() {
 	})
 	opts.SetOnConnectHandler(func(client mqtt.Client) {
 		fmt.Println("Connected as", opts.ClientID)
-		sensor_availability := HomeassistantDevice{
-			Name:             "Teams Availability",
-			AvailabilityMode: "all",
-			Device:           device,
-			UniqueId:         "teams_presence_availability",
-			StateTopic:       "msteams/presence",
-			ValueTemplate:    "{{ value_json.availability }}",
-			ExpireAfter:      int(expiration),
-			Icon:             "mdi:eye",
-		}
-
-		sensor_activity := HomeassistantDevice{
-			Name:             "Teams Activity",
-			AvailabilityMode: "all",
-			Device:           device,
-			UniqueId:         "teams_presence_activity",
-			StateTopic:       "msteams/presence",
-			ValueTemplate:    "{{ value_json.activity }}",
-			ExpireAfter:      int(expiration),
-			Icon:             "mdi:eye",
-		}
-
-		sensor_status := HomeassistantDevice{
-			Name:                "Teams Status Message",
-			AvailabilityMode:    "all",
-			Device:              device,
-			UniqueId:            "teams_presence_status",
-			StateTopic:          "msteams/presence",
-			ValueTemplate:       "{{ value_json.statusMessage.message.content }}",
-			ExpireAfter:         int(expiration),
-			Icon:                "mdi:eye",
-			DeviceClass:         homeassistant.DeviceClassNone,
-			PayloadNotAvailable: "",
-		}
-
-		sensor_update := HomeassistantDevice{
-			Name:                  "Teams Status Update",
-			AvailabilityMode:      "all",
-			Device:                device,
-			UniqueId:              "teams_presence_update",
-			StateTopic:            "msteams/version",
-			ValueTemplate:         "{{ value_json.version }}",
-			ExpireAfter:           int(expiration),
-			Icon:                  "mdi:update",
-			DeviceClass:           homeassistant.DeviceClassFirmware,
-			EntityCategory:        homeassistant.EntityCategoryDiagnostic,
-			LatestVersionTopic:    "msteams/version",
-			LatestVersionTemplate: "{{ value_json.latest.tag_name }}",
-			ReleaseUrl: 		  "{{ value_json.latest.url }}",
-		}
-		sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
-		sensorActivityJSON, _ := json.Marshal(sensor_activity)
-		sensorStatusJSON, _ := json.Marshal(sensor_status)
-		sensorUpdateJSON, _ := json.Marshal(sensor_update)
-		client.Publish("homeassistant/sensor/teams/availability/config", 1, false, string(sensorAvailabilityJSON))
-		client.Publish("homeassistant/sensor/teams/activity/config", 1, false, string(sensorActivityJSON))
-		client.Publish("homeassistant/sensor/teams/status/config", 1, false, string(sensorStatusJSON))
-		client.Publish("homeassistant/sensor/teams/update/config", 1, false, string(sensorUpdateJSON))
+		sendDeviceDescriptionMqtt(client)
 	})
 	client := mqtt.NewClient(opts)
 	if mqttToken := client.Connect(); mqttToken.Wait() && mqttToken.Error() != nil {
 		panic(mqttToken.Error())
 	}
 	go updateCheck()
+	go sendDeviceDescription(client)
 	ticker := time.NewTicker(1 * time.Second)
 	for range ticker.C {
 		// check if client is still connected, else panic
@@ -254,4 +198,73 @@ func getPresence(token token.Token) Presence {
 	json.Unmarshal(body, &presence)
 
 	return presence
+}
+
+func sendDeviceDescription(client mqtt.Client) {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	for range ticker.C {
+		sendDeviceDescriptionMqtt(client)
+	}
+}
+
+func sendDeviceDescriptionMqtt(client mqtt.Client) {
+	sensor_availability := HomeassistantDevice{
+		Name:             "Teams Availability",
+		AvailabilityMode: "all",
+		Device:           device,
+		UniqueId:         "teams_presence_availability",
+		StateTopic:       "msteams/presence",
+		ValueTemplate:    "{{ value_json.availability }}",
+		ExpireAfter:      int(expiration),
+		Icon:             "mdi:eye",
+	}
+
+	sensor_activity := HomeassistantDevice{
+		Name:             "Teams Activity",
+		AvailabilityMode: "all",
+		Device:           device,
+		UniqueId:         "teams_presence_activity",
+		StateTopic:       "msteams/presence",
+		ValueTemplate:    "{{ value_json.activity }}",
+		ExpireAfter:      int(expiration),
+		Icon:             "mdi:eye",
+	}
+
+	sensor_status := HomeassistantDevice{
+		Name:                "Teams Status Message",
+		AvailabilityMode:    "all",
+		Device:              device,
+		UniqueId:            "teams_presence_status",
+		StateTopic:          "msteams/presence",
+		ValueTemplate:       "{{ value_json.statusMessage.message.content }}",
+		ExpireAfter:         int(expiration),
+		Icon:                "mdi:eye",
+		DeviceClass:         homeassistant.DeviceClassNone,
+		PayloadNotAvailable: "",
+	}
+
+	sensor_update := HomeassistantDevice{
+		Name:                  "Teams Status Update",
+		AvailabilityMode:      "all",
+		Device:                device,
+		UniqueId:              "teams_presence_update",
+		StateTopic:            "msteams/version",
+		ValueTemplate:         "{{ value_json.version }}",
+		ExpireAfter:           int(expiration),
+		Icon:                  "mdi:update",
+		DeviceClass:           homeassistant.DeviceClassFirmware,
+		EntityCategory:        homeassistant.EntityCategoryDiagnostic,
+		LatestVersionTopic:    "msteams/version",
+		LatestVersionTemplate: "{{ value_json.latest.tag_name }}",
+		ReleaseUrl:            "{{ value_json.latest.url }}",
+	}
+	sensorAvailabilityJSON, _ := json.Marshal(sensor_availability)
+	sensorActivityJSON, _ := json.Marshal(sensor_activity)
+	sensorStatusJSON, _ := json.Marshal(sensor_status)
+	sensorUpdateJSON, _ := json.Marshal(sensor_update)
+	client.Publish("homeassistant/sensor/teams/availability/config", 1, true, string(sensorAvailabilityJSON))
+	client.Publish("homeassistant/sensor/teams/activity/config", 1, true, string(sensorActivityJSON))
+	client.Publish("homeassistant/sensor/teams/status/config", 1, true, string(sensorStatusJSON))
+	client.Publish("homeassistant/sensor/teams/update/config", 1, true, string(sensorUpdateJSON))
 }
