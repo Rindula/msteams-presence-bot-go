@@ -1,4 +1,4 @@
-FROM golang:latest as builder
+FROM golang:latest AS builder
 
 ARG APP_VERSION=0.0.0
 
