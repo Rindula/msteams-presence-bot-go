@@ -263,8 +263,8 @@ func sendDeviceDescriptionMqtt(client mqtt.Client) {
 	sensorActivityJSON, _ := json.Marshal(sensor_activity)
 	sensorStatusJSON, _ := json.Marshal(sensor_status)
 	sensorUpdateJSON, _ := json.Marshal(sensor_update)
-	client.Publish("homeassistant/sensor/teams/availability/config", 1, true, string(sensorAvailabilityJSON))
-	client.Publish("homeassistant/sensor/teams/activity/config", 1, true, string(sensorActivityJSON))
-	client.Publish("homeassistant/sensor/teams/status/config", 1, true, string(sensorStatusJSON))
-	client.Publish("homeassistant/sensor/teams/update/config", 1, true, string(sensorUpdateJSON))
+	client.Publish("homeassistant/sensor/teams/availability/config", 1, false, string(sensorAvailabilityJSON))
+	client.Publish("homeassistant/sensor/teams/activity/config", 1, false, string(sensorActivityJSON))
+	client.Publish("homeassistant/sensor/teams/status/config", 1, false, string(sensorStatusJSON))
+	client.Publish("homeassistant/sensor/teams/update/config", 1, false, string(sensorUpdateJSON))
 }
