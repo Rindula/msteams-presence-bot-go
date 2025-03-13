@@ -32,6 +32,7 @@ func updateCheck() {
 		} else {
 			latestVersion = lv
 		}
+		log.Println(version, latestVersion)
 	}
 }
 
