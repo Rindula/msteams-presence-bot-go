@@ -138,7 +138,7 @@ func main() {
 		}
 		presence := getPresence(token.GetToken())
 		presenceJson, _ := json.Marshal(presence)
-		log.Println(string(presenceJson))
+		fmt.Println(string(presenceJson))
 
 		token := client.Publish("msteams/presence", 0, false, string(presenceJson))
 		go func() {
