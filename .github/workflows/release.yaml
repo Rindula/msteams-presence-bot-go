@@ -48,7 +48,7 @@ jobs:
         GOARCH: ${{ matrix.goarch }}
       run: |
         go build -ldflags "-X main.version=${APP_VERSION}" -o msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} .
-    - uses: actions/attest@v2
+    - uses: actions/attest@v3
       with:
         subject-path: msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
         predicate-type: https://in-toto.io/attestation/release
