@@ -66,19 +66,8 @@ jobs:
         context: .
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64,linux/arm/v7
-        provenance: false
         push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           APP_VERSION=${{ github.ref_name }}
-    - name: Attest
-      uses: actions/attest@v2
-      if: ${{ github.event_name == 'push' }}
-      id: attest
-      with:
-        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        subject-digest: ${{ steps.push.outputs.digest }}
-        predicate-type: 'https://in-toto.io/attestation/release'
-        predicate: '{"purl":"pkg:oci/${{ steps.push.outputs.digest }}"}'
-        push-to-registry: true
