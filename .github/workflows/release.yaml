@@ -54,7 +54,7 @@ jobs:
         predicate-type: https://in-toto.io/attestation/release
         predicate: '{"purl":"pkg:${{ github.sha }}-${{ matrix.goos }}-${{ matrix.goarch }}"}'
     - name: Archive
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
         path: msteams-presence-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
