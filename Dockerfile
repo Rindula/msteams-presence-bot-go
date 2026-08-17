@@ -17,7 +17,9 @@ ENV CLIENT_ID= \
     AUTH_TENANT=common \
     GRAPH_USER_SCOPES='user.read offline_access' \
     MQTT_USER= \
-    MQTT_PASSWORD=
+    MQTT_PASSWORD= \
+    LICENSE_KEY= \
+    LICENSE_DEVICE_ID=
 
 # create empty .env file
 RUN touch /app/.env

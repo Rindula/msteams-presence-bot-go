@@ -81,6 +81,8 @@ func main() {
 			file.WriteString("MQTT_PASSWORD=\n")
 			file.WriteString("MQTT_HOST=\n")
 			file.WriteString("MQTT_PORT=1883\n")
+			file.WriteString("LICENSE_KEY=\n")
+			file.WriteString("LICENSE_DEVICE_ID=\n")
 			log.Fatalln("Please fill in the .env file")
 		} else {
 			// fill in the .env file
@@ -101,6 +103,10 @@ func main() {
 	if err != nil {
 		log.Println("Error loading .env file")
 	}
+	if err := authenticateLicense(); err != nil {
+		log.Fatalln("License validation failed:", err)
+	}
+	go periodicLicenseCheck()
 	latestVersion = Release{TagName: version, Url: ""}
 
 	// initialize mqtt client
