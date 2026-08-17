@@ -80,14 +80,9 @@ func authenticateLicense() error {
 	if err != nil {
 		return err
 	}
-	serverURL := os.Getenv("LICENSE_SERVER_URL")
-	if strings.TrimSpace(serverURL) == "" {
-		serverURL = defaultLicenseServerURL
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	result, err := validateLicense(ctx, &http.Client{Timeout: 15 * time.Second}, serverURL, os.Getenv("LICENSE_KEY"), deviceID)
+	result, err := validateLicense(ctx, &http.Client{Timeout: 15 * time.Second}, defaultLicenseServerURL, os.Getenv("LICENSE_KEY"), deviceID)
 	if err != nil {
 		return err
 	}
